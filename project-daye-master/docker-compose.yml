@@ -1,0 +1,42 @@
+version: '3.8'
+
+services:
+  # MariaDB 서비스
+  mariadb:
+    image: mariadb:11.5
+    container_name: demo_mariadb
+    environment:
+      MYSQL_ROOT_PASSWORD: root_password
+      MYSQL_DATABASE: demo_db
+      MYSQL_USER: demo_user
+      MYSQL_PASSWORD: demo_password
+    ports:
+      - "3306:3306"
+    volumes:
+      - mariadb_data:/var/lib/mysql
+      - ./init.sql:/docker-entrypoint-initdb.d/init.sql
+    networks:
+      - demo_network
+
+  # Spring Boot 애플리케이션
+  app:
+    build: .
+    container_name: demo_app
+    ports:
+      - "8080:8080"
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:mariadb://mariadb:3306/demo_db?useSSL=false&serverTimezone=UTC&characterEncoding=UTF-8
+      SPRING_DATASOURCE_USERNAME: demo_user
+      SPRING_DATASOURCE_PASSWORD: demo_password
+    depends_on:
+      - mariadb
+    networks:
+      - demo_network
+    restart: unless-stopped
+
+volumes:
+  mariadb_data:
+
+networks:
+  demo_network:
+    driver: bridge 

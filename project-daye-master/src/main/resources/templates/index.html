@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head>
+    <meta charset="UTF-8">
+    <title>Spring Security Taglibs 예제</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        .security-info {
+            background-color: #f0f0f0;
+            padding: 15px;
+            border-radius: 5px;
+            margin: 10px 0;
+        }
+        .user-info {
+            background-color: #e8f5e8;
+            padding: 15px;
+            border-radius: 5px;
+            margin: 10px 0;
+        }
+        .admin-section {
+            background-color: #fff3cd;
+            padding: 15px;
+            border-radius: 5px;
+            margin: 10px 0;
+        }
+        .login-form {
+            background-color: #f8f9fa;
+            padding: 20px;
+            border-radius: 5px;
+            margin: 10px 0;
+        }
+        .form-group {
+            margin-bottom: 15px;
+        }
+        .form-group label {
+            display: block;
+            margin-bottom: 5px;
+        }
+        .form-group input {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+        .btn {
+            background-color: #007bff;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        .btn:hover {
+            background-color: #0056b3;
+        }
+    </style>
+</head>
+<body>
+    <h1>Spring Security Taglibs 예제</h1>
+    
+    <!-- 인증 상태 확인 -->
+    <div class="security-info">
+        <h3>인증 상태</h3>
+        <p sec:authorize="!isAuthenticated()">
+            현재 로그인되지 않았습니다.
+        </p>
+        <p sec:authorize="isAuthenticated()">
+            현재 로그인되어 있습니다.
+        </p>
+    </div>
+
+    <!-- 사용자 정보 표시 -->
+    <div class="user-info" sec:authorize="isAuthenticated()">
+        <h3>사용자 정보</h3>
+        <p>사용자명: <span sec:authentication="name"></span></p>
+        <p>권한: <span sec:authentication="principal.authorities"></span></p>
+    </div>
+
+    <!-- 역할별 접근 제어 -->
+    <div class="admin-section" sec:authorize="hasRole('ADMIN')">
+        <h3>관리자 전용 섹션</h3>
+        <p>이 섹션은 ADMIN 역할을 가진 사용자만 볼 수 있습니다.</p>
+    </div>
+
+    <div sec:authorize="hasRole('USER')">
+        <h3>일반 사용자 섹션</h3>
+        <p>이 섹션은 USER 역할을 가진 사용자만 볼 수 있습니다.</p>
+    </div>
+
+    <!-- 로그인 폼 (로그인되지 않은 경우에만 표시) -->
+    <div class="login-form" sec:authorize="!isAuthenticated()">
+        <h3>로그인</h3>
+        <form th:action="@{/login}" method="post">
+            <div class="form-group">
+                <label for="username">사용자명:</label>
+                <input type="text" id="username" name="username" required>
+            </div>
+            <div class="form-group">
+                <label for="password">비밀번호:</label>
+                <input type="password" id="password" name="password" required>
+            </div>
+            <button type="submit" class="btn">로그인</button>
+        </form>
+    </div>
+
+    <!-- 로그아웃 버튼 (로그인된 경우에만 표시) -->
+    <div sec:authorize="isAuthenticated()">
+        <form th:action="@{/logout}" method="post">
+            <button type="submit" class="btn">로그아웃</button>
+        </form>
+    </div>
+
+    <!-- 권한별 링크 -->
+    <div style="margin-top: 20px;">
+        <h3>메뉴</h3>
+        <ul>
+            <li><a href="/">홈</a></li>
+            <li sec:authorize="hasRole('ADMIN')">
+                <a href="/admin">관리자 페이지</a>
+            </li>
+            <li sec:authorize="hasRole('USER')">
+                <a href="/user">사용자 페이지</a>
+            </li>
+            <li sec:authorize="hasAnyRole('ADMIN', 'USER')">
+                <a href="/profile">프로필</a>
+            </li>
+        </ul>
+    </div>
+
+    <!-- 조건부 표현식 예제 -->
+    <div style="margin-top: 20px;">
+        <h3>조건부 표현식 예제</h3>
+        <p sec:authorize="hasAuthority('READ')">
+            읽기 권한이 있습니다.
+        </p>
+        <p sec:authorize="hasAuthority('WRITE')">
+            쓰기 권한이 있습니다.
+        </p>
+        <p sec:authorize="hasAnyAuthority('READ', 'WRITE')">
+            읽기 또는 쓰기 권한이 있습니다.
+        </p>
+    </div>
+</body>
+</html> 
