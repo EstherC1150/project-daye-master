@@ -8,21 +8,21 @@ public class HomeController {
 
     @GetMapping("/")
     public String home() {
-        return "index";
+        return "redirect:/posts";
     }
 
     @GetMapping("/admin")
     public String admin() {
-        return "admin";
+        return "redirect:/posts"; // admin 페이지를 갤러리로 리다이렉트
     }
 
     @GetMapping("/user")
     public String user() {
-        return "user";
+        return "redirect:/posts"; // user 페이지를 갤러리로 리다이렉트
     }
 
     @GetMapping("/profile")
     public String profile() {
-        return "profile";
+        return "redirect:/posts"; // profile 페이지를 갤러리로 리다이렉트
     }
 } 

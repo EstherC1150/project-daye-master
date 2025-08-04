@@ -1,0 +1,785 @@
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>동영상 갤러리 - 상세보기</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css" rel="stylesheet">
+    <style>
+        .video-container {
+            position: relative;
+            width: 100%;
+            max-width: 800px;
+            margin: 0 auto;
+            background: #000;
+            border-radius: 8px;
+            overflow: hidden;
+            /* 반응형 16:9 비율 설정 */
+            aspect-ratio: 16 / 9;
+        }
+        .video-player {
+            width: 100%;
+            height: 100%;
+            display: block;
+            background: #000;
+            object-fit: cover; /* 여백 없이 꽉 차게 */
+        }
+        .video-info {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 8px;
+            margin-top: 20px;
+        }
+        .no-video-message {
+            background: #e9ecef;
+            padding: 40px;
+            text-align: center;
+            border-radius: 8px;
+            color: #6c757d;
+        }
+        .loading-spinner {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            color: white;
+            font-size: 2rem;
+        }
+                 .video-error {
+             background: #dc3545;
+             color: white;
+             padding: 20px;
+             border-radius: 8px;
+             text-align: center;
+             margin-top: 10px;
+         }
+         
+         /* 댓글 버튼 hover 효과 */
+         .comment-actions .btn-link {
+             opacity: 0.6;
+             transition: opacity 0.2s ease;
+         }
+         
+         .comment-actions .btn-link:hover {
+             opacity: 1;
+             transform: scale(1.1);
+         }
+         
+         .comment-actions .btn-link.text-warning:hover {
+             color: #ffc107 !important;
+         }
+         
+         .comment-actions .btn-link.text-danger:hover {
+             color: #dc3545 !important;
+         }
+    </style>
+</head>
+<body>
+    <!-- 네비게이션 바 포함 -->
+    <div th:replace="~{fragments/navbar :: navbar}"></div>
+    
+    <div class="container mt-4">
+        <div class="row">
+            <div class="col-12">
+                <nav aria-label="breadcrumb">
+                    <ol class="breadcrumb">
+                        <li class="breadcrumb-item"><a href="/posts" class="text-decoration-none"><i class="bi bi-arrow-left"></i> 갤러리로 돌아가기</a></li>
+                    </ol>
+                </nav>
+                
+                <div class="card">
+                    <div class="card-header">
+                        <h2 class="mb-0"><i class="bi bi-play-circle"></i> <span th:text="${post.title}">제목</span></h2>
+                    </div>
+                                         <div class="card-body">
+                         <div class="row">
+                             <div class="col-md-8">
+                                 <div th:if="${post.videoFilename != null and post.videoFilename != ''}">
+                                     <div class="video-container">
+                                         <div id="loadingSpinner" class="loading-spinner">
+                                             <i class="bi bi-hourglass-split"></i>
+                                             <div>로딩 중...</div>
+                                         </div>
+                                         <video id="videoPlayer" class="video-player" 
+                                                controls 
+                                                preload="metadata"
+                                                crossorigin="anonymous"
+                                                th:src="@{'/files/video/' + ${post.id}}"
+                                                th:poster="@{'/files/thumbnail/' + ${post.thumbnailFilename}}"
+                                                style="display: none;">
+                                             <!-- 여러 포맷 지원 -->
+                                             <source th:src="@{'/files/video/' + ${post.id}}" type="video/mp4">
+                                             <source th:src="@{'/files/video/' + ${post.id}}" type="video/webm">
+                                             <source th:src="@{'/files/video/' + ${post.id}}" type="video/ogg">
+                                             브라우저가 동영상을 지원하지 않습니다.
+                                         </video>
+                                         <div id="videoError" class="video-error" style="display: none;">
+                                             <i class="bi bi-exclamation-triangle"></i>
+                                             <h5>동영상 재생 오류</h5>
+                                             <p id="errorMessage">동영상을 재생할 수 없습니다. 파일이 손상되었거나 지원하지 않는 형식일 수 있습니다.</p>
+                                             <button onclick="retryVideo()" class="btn btn-light btn-sm">
+                                                 <i class="bi bi-arrow-clockwise"></i> 다시 시도
+                                             </button>
+                                         </div>
+                                     </div>
+                                     
+                                     <div class="video-info mt-3">
+                                         <h5><i class="bi bi-info-circle"></i> 동영상 정보</h5>
+                                         <div class="row">
+                                             <div class="col-md-6">
+                                                 <p><strong>파일명:</strong> <span th:text="${post.videoOriginalName}">파일명</span></p>
+                                                 <p><strong>크기:</strong> <span th:text="${#numbers.formatDecimal(post.videoSize / 1024 / 1024, 1, 2)}">0</span> MB</p>
+                                             </div>
+                                             <div class="col-md-6">
+                                                 <p><strong>재생 시간:</strong> <span id="duration">로딩 중...</span></p>
+                                                 <p><strong>해상도:</strong> <span id="resolution">로딩 중...</span></p>
+                                             </div>
+                                         </div>
+                                         <div class="mt-2">
+                                             <a th:href="@{'/files/download/' + ${post.id}}" class="btn btn-primary me-2">
+                                                 <i class="bi bi-download"></i> 다운로드
+                                             </a>
+                                             <button onclick="copyVideoUrl()" class="btn btn-outline-secondary">
+                                                 <i class="bi bi-link-45deg"></i> 링크 복사
+                                             </button>
+                                         </div>
+                                     </div>
+                                 </div>
+                                 
+                                 <div th:unless="${post.videoFilename != null and post.videoFilename != ''}" class="no-video-message">
+                                     <i class="bi bi-exclamation-triangle" style="font-size: 3rem;"></i>
+                                     <h4 class="mt-3">동영상이 없습니다</h4>
+                                     <p>이 게시글에는 첨부된 동영상이 없습니다.</p>
+                                 </div>
+                             </div>
+                             
+                             <div class="col-md-4">
+                                 <div class="card h-100">
+                                     <div class="card-header d-flex justify-content-between align-items-center">
+                                         <h6 class="mb-0"><i class="bi bi-file-text"></i> 게시글 정보</h6>
+                                         <div th:if="${#authorization.expression('isAuthenticated()') and #authentication.principal.username == post.author.username}">
+                                             <a th:href="@{'/posts/' + ${post.id} + '/edit'}" class="btn btn-warning btn-sm me-1">
+                                                 <i class="bi bi-pencil"></i> 수정
+                                             </a>
+                                             <button onclick="deletePost()" class="btn btn-danger btn-sm">
+                                                 <i class="bi bi-trash"></i> 삭제
+                                             </button>
+                                         </div>
+                                     </div>
+                                     <div class="card-body">
+                                         <p><strong>작성자:</strong> <span th:text="${post.author.fullName}">작성자</span></p>
+                                         <p><strong>조회수:</strong> <span th:text="${post.viewCount}">0</span></p>
+                                         <p><strong>작성일:</strong> <span th:text="${#temporals.format(post.createdAt, 'yyyy-MM-dd HH:mm')}">날짜</span></p>
+                                         <p><strong>내용:</strong></p>
+                                         <div class="border rounded p-3 bg-light">
+                                             <span th:text="${post.content}">내용</span>
+                                         </div>
+                                     </div>
+                                 </div>
+                             </div>
+                         </div>
+                     </div>
+                 </div>
+             </div>
+         </div>
+         
+         <!-- 댓글 섹션 - 전체 너비로 이동 -->
+         <div class="row mt-4">
+             <div class="col-12">
+                 <div class="card">
+                     <div class="card-header">
+                         <h5 class="mb-0"><i class="bi bi-chat-dots"></i> 댓글</h5>
+                     </div>
+                     <div class="card-body">
+                                                   <!-- 댓글 작성 폼 -->
+                          <div th:if="${#authorization.expression('isAuthenticated()')}" class="mb-4">
+                              <form id="commentForm">
+                                  <div class="mb-3">
+                                      <textarea class="form-control" id="commentContent" rows="3" 
+                                                placeholder="댓글을 작성해주세요..." required></textarea>
+                                  </div>
+                                  <button type="submit" class="btn btn-primary">
+                                      <i class="bi bi-send"></i> 댓글 작성
+                                  </button>
+                              </form>
+                          </div>
+                          <div th:unless="${#authorization.expression('isAuthenticated()')}" class="text-center py-4 border rounded bg-light">
+                              <i class="bi bi-chat-dots text-primary mb-3" style="font-size: 2rem;"></i>
+                              <h6 class="text-muted mb-2">댓글을 작성하려면 로그인이 필요합니다</h6>
+                              <p class="text-muted small mb-3">로그인하시면 댓글과 답글을 작성할 수 있습니다.</p>
+                              <div class="d-flex justify-content-center gap-2">
+                                  <a href="/login" class="btn btn-outline-primary btn-sm">
+                                      <i class="bi bi-box-arrow-in-right"></i> 로그인
+                                  </a>
+                                  <a href="/register" class="btn btn-outline-success btn-sm">
+                                      <i class="bi bi-person-plus"></i> 회원가입
+                                  </a>
+                              </div>
+                          </div>
+                         
+                         <!-- 댓글 목록 -->
+                         <div id="commentsList" class="mt-4">
+                             <div class="text-center text-muted py-4">
+                                 <i class="bi bi-hourglass-split"></i>
+                                 <p class="mb-0">댓글을 불러오는 중...</p>
+                             </div>
+                         </div>
+                     </div>
+                 </div>
+             </div>
+         </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script th:inline="javascript">
+        const video = document.getElementById('videoPlayer');
+        const loadingSpinner = document.getElementById('loadingSpinner');
+        const videoError = document.getElementById('videoError');
+        const errorMessage = document.getElementById('errorMessage');
+        const durationSpan = document.getElementById('duration');
+        const resolutionSpan = document.getElementById('resolution');
+        
+        let retryCount = 0;
+        const maxRetries = 3;
+        
+        if (video) {
+            // 로딩 시작
+            video.addEventListener('loadstart', () => {
+                console.log('▶️ 비디오 로드 시작');
+                showLoading();
+            });
+            
+            // 메타데이터 로드 완료
+            video.addEventListener('loadedmetadata', () => {
+                console.log('📋 비디오 메타데이터 로드 완료');
+                hideLoading();
+                showVideo();
+                
+                // 재생 시간 표시
+                if (video.duration && !isNaN(video.duration)) {
+                    const minutes = Math.floor(video.duration / 60);
+                    const seconds = Math.floor(video.duration % 60);
+                    durationSpan.textContent = `${minutes}:${seconds.toString().padStart(2, '0')}`;
+                }
+                
+                // 해상도 표시
+                if (video.videoWidth && video.videoHeight) {
+                    resolutionSpan.textContent = `${video.videoWidth} × ${video.videoHeight}`;
+                }
+            });
+            
+            // 재생 가능
+            video.addEventListener('canplay', () => {
+                console.log('✅ 비디오 재생 가능');
+                hideLoading();
+                showVideo();
+            });
+            
+            // 재생 시작
+            video.addEventListener('play', () => {
+                console.log('▶️ 비디오 재생 시작');
+                hideError();
+            });
+            
+            // 일시정지
+            video.addEventListener('pause', () => {
+                console.log('⏸️ 비디오 재생 중단');
+            });
+            
+            // 재생 완료
+            video.addEventListener('ended', () => {
+                console.log('🏁 비디오 재생 완료');
+            });
+            
+            // 로딩 중단
+            video.addEventListener('abort', () => {
+                console.log('❌ 비디오 로드 중단');
+                hideLoading();
+                showError('동영상 로드가 중단되었습니다.');
+            });
+            
+            // 로딩 지연
+            video.addEventListener('stalled', () => {
+                console.log('⏳ 비디오 로드 지연');
+                showLoading();
+            });
+            
+            // 대기 상태
+            video.addEventListener('waiting', () => {
+                console.log('⏳ 비디오 버퍼링 중');
+                showLoading();
+            });
+            
+            // 재생 재개
+            video.addEventListener('playing', () => {
+                console.log('▶️ 비디오 재생 재개');
+                hideLoading();
+            });
+            
+            // 에러 처리
+            video.addEventListener('error', (e) => {
+                console.error('❌ 비디오 로드 오류:', e);
+                hideLoading();
+                
+                let errorMsg = '동영상을 재생할 수 없습니다.';
+                
+                if (video.error) {
+                    console.error('❌ 비디오 오류 코드:', video.error.code);
+                    console.error('❌ 비디오 오류 메시지:', video.error.message);
+                    
+                    switch (video.error.code) {
+                        case 1: // MEDIA_ERR_ABORTED
+                            errorMsg = '동영상 로드가 중단되었습니다.';
+                            break;
+                        case 2: // MEDIA_ERR_NETWORK
+                            errorMsg = '네트워크 오류로 동영상을 로드할 수 없습니다.';
+                            break;
+                        case 3: // MEDIA_ERR_DECODE
+                            errorMsg = '동영상 파일이 손상되었거나 지원하지 않는 형식입니다.';
+                            break;
+                        case 4: // MEDIA_ERR_SRC_NOT_SUPPORTED
+                            errorMsg = '지원하지 않는 동영상 형식이거나 파일을 찾을 수 없습니다.';
+                            break;
+                    }
+                }
+                
+                console.error('❌ 비디오 src:', video.src);
+                console.error('❌ 비디오 currentSrc:', video.currentSrc);
+                
+                showError(errorMsg);
+            });
+            
+            // 초기 로드 시도
+            video.load();
+        }
+        
+        function showLoading() {
+            loadingSpinner.style.display = 'block';
+            video.style.display = 'none';
+            videoError.style.display = 'none';
+        }
+        
+        function hideLoading() {
+            loadingSpinner.style.display = 'none';
+        }
+        
+        function showVideo() {
+            video.style.display = 'block';
+            videoError.style.display = 'none';
+        }
+        
+        function showError(message) {
+            errorMessage.textContent = message;
+            videoError.style.display = 'block';
+            video.style.display = 'none';
+            loadingSpinner.style.display = 'none';
+        }
+        
+        function hideError() {
+            videoError.style.display = 'none';
+        }
+        
+        function retryVideo() {
+            retryCount++;
+            if (retryCount <= maxRetries) {
+                console.log(`🔄 동영상 재시도 ${retryCount}/${maxRetries}`);
+                hideError();
+                showLoading();
+                
+                // 잠깐 기다린 후 재시도
+                setTimeout(() => {
+                    video.load();
+                }, 1000);
+            } else {
+                showError('최대 재시도 횟수를 초과했습니다. 페이지를 새로고침 해주세요.');
+            }
+        }
+        
+        function copyVideoUrl() {
+            const videoUrl = video.src;
+            if (navigator.clipboard) {
+                navigator.clipboard.writeText(videoUrl).then(() => {
+                    // 임시 알림 표시
+                    const btn = event.target;
+                    const originalText = btn.innerHTML;
+                    btn.innerHTML = '<i class="bi bi-check"></i> 복사됨!';
+                    btn.classList.add('btn-success');
+                    btn.classList.remove('btn-outline-secondary');
+                    
+                    setTimeout(() => {
+                        btn.innerHTML = originalText;
+                        btn.classList.remove('btn-success');
+                        btn.classList.add('btn-outline-secondary');
+                    }, 2000);
+                }).catch(() => {
+                    alert('링크 복사에 실패했습니다.');
+                });
+            } else {
+                // 폴백: 텍스트 선택
+                const textArea = document.createElement('textarea');
+                textArea.value = videoUrl;
+                document.body.appendChild(textArea);
+                textArea.select();
+                try {
+                    document.execCommand('copy');
+                    alert('링크가 복사되었습니다.');
+                } catch (err) {
+                    alert('링크 복사에 실패했습니다.');
+                }
+                document.body.removeChild(textArea);
+            }
+        }
+        
+        function deletePost() {
+            if (confirm('정말로 이 게시글을 삭제하시겠습니까?')) {
+                const postId = /*[[${post.id}]]*/ '';
+                fetch(`/posts/${postId}/delete`, {
+                    method: 'DELETE',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    }
+                })
+                .then(response => {
+                    if (response.ok) {
+                        window.location.href = '/posts';
+                    } else {
+                        alert('삭제에 실패했습니다.');
+                    }
+                }).catch(error => {
+                    console.error('Error:', error);
+                    alert('삭제 중 오류가 발생했습니다.');
+                });
+            }
+        }
+        
+                 // 댓글 관련 기능
+         const commentForm = document.getElementById('commentForm');
+         const commentContent = document.getElementById('commentContent');
+         const commentsList = document.getElementById('commentsList');
+         
+         // 댓글 작성 폼이 있을 때만 이벤트 리스너 추가 (로그인한 사용자만)
+         if (commentForm) {
+             commentForm.addEventListener('submit', function(e) {
+                 e.preventDefault();
+                 
+                 const content = commentContent.value.trim();
+                 if (!content) {
+                     alert('댓글 내용을 입력해주세요.');
+                     return;
+                 }
+                 
+                 const postId = /*[[${post.id}]]*/ '';
+                 
+                 fetch(`/api/comments`, {
+                     method: 'POST',
+                     headers: {
+                         'Content-Type': 'application/json'
+                     },
+                     body: JSON.stringify({
+                         postId: postId,
+                         content: content
+                     })
+                 })
+                 .then(response => {
+                     if (response.ok) {
+                         return response.json();
+                     } else {
+                         throw new Error('댓글 작성에 실패했습니다.');
+                     }
+                 })
+                 .then(data => {
+                     commentContent.value = '';
+                     loadComments();
+                     alert('댓글이 작성되었습니다.');
+                 })
+                 .catch(error => {
+                     console.error('Error:', error);
+                     alert(error.message);
+                 });
+             });
+         }
+        
+                 function loadComments() {
+             const postId = /*[[${post.id}]]*/ '';
+             
+             fetch(`/api/comments/${postId}`)
+             .then(response => {
+                 if (!response.ok) {
+                     throw new Error('댓글을 불러올 수 없습니다.');
+                 }
+                 return response.json();
+             })
+             .then(comments => {
+                 displayComments(comments);
+             })
+             .catch(error => {
+                 console.error('댓글 로드 실패:', error);
+                 commentsList.innerHTML = `
+                     <div class="text-center text-danger py-3">
+                         <i class="bi bi-exclamation-triangle"></i>
+                         <p class="mb-0">댓글을 불러오는데 실패했습니다.</p>
+                         <small>${error.message}</small>
+                     </div>
+                 `;
+             });
+         }
+        
+                 function displayComments(comments) {
+             if (comments.length === 0) {
+                 commentsList.innerHTML = `
+                     <div class="text-center text-muted py-3">
+                         <i class="bi bi-chat-dots"></i>
+                         <p class="mb-0">아직 댓글이 없습니다.</p>
+                     </div>
+                 `;
+                 return;
+             }
+             
+             const commentsHtml = comments.map(comment => {
+                 return renderComment(comment, 0);
+             }).join('');
+             
+             commentsList.innerHTML = commentsHtml;
+         }
+         
+         // 재귀적으로 댓글과 답글을 렌더링하는 함수
+         function renderComment(comment, depth) {
+             const currentUser = /*[[(#authentication != null and #authentication.principal != 'anonymousUser' ? #authentication.principal.username : '')]]*/ '';
+             const isLoggedIn = currentUser && currentUser !== '';
+             const isAuthor = currentUser === comment.authorUsername;
+             
+             // 디버깅용 로그
+             console.log('댓글 정보:', {
+                 commentId: comment.id,
+                 authorName: comment.authorName,
+                 authorUsername: comment.authorUsername,
+                 currentUser: currentUser,
+                 isLoggedIn: isLoggedIn,
+                 isAuthor: isAuthor
+             });
+             
+             // 들여쓰기 계산 수정 - 각 깊이별로 명확한 클래스 설정
+             let indentClass = '';
+             if (depth === 1) indentClass = 'ms-3';
+             else if (depth === 2) indentClass = 'ms-5';
+             else if (depth === 3) indentClass = 'ms-7';
+             else if (depth >= 4) indentClass = 'ms-9';
+             
+             const borderClass = depth > 0 ? 'border-start ps-3' : '';
+             const borderStyle = depth > 0 ? `border-left: 3px solid #dee2e6;` : '';
+             const arrowPrefix = depth > 0 ? '↳ '.repeat(depth) : '';
+             const textColor = depth > 0 ? 'text-primary' : '';
+             
+                           return `
+                 <div class="comment-item ${depth === 0 ? 'border-bottom' : ''} pb-3 mb-3 ${indentClass}">
+                <div class="d-flex justify-content-between align-items-start ${borderClass}" style="${borderStyle}">
+                    <div class="flex-grow-1">
+                        <div class="d-flex align-items-center mb-1">
+                            <strong class="me-2 ${textColor}">${arrowPrefix}${comment.authorName}</strong>
+                            <small class="text-muted">${new Date(comment.createdAt).toLocaleString()}</small>
+                        </div>
+                        <div id="commentContent${comment.id}" class="comment-content">
+                            <p class="mb-2">${comment.content}</p>
+                        </div>
+                        <div id="editForm${comment.id}" class="edit-form" style="display: none;">
+                            <textarea class="form-control mb-2" id="editContent${comment.id}" rows="2" 
+                                      placeholder="댓글을 수정해주세요...">${comment.content}</textarea>
+                            <button onclick="submitEdit(${comment.id})" class="btn btn-primary btn-sm me-2">
+                                <i class="bi bi-check"></i> 수정 완료
+                            </button>
+                            <button onclick="hideEditForm(${comment.id})" class="btn btn-outline-secondary btn-sm">
+                                취소
+                            </button>
+                        </div>
+                        <div class="d-flex align-items-center comment-actions">
+                            ${isLoggedIn ? `
+                                <button onclick="showReplyForm(${comment.id})" class="btn btn-link btn-sm p-0 me-3 text-decoration-none">
+                                    <i class="bi bi-reply"></i> 답글
+                                </button>
+                            ` : `
+                                <small class="text-muted me-3">
+                                    <i class="bi bi-info-circle"></i> 답글을 작성하려면 로그인이 필요합니다
+                                </small>
+                            `}
+                            ${isAuthor ? `
+                                <button onclick="editComment(${comment.id})" class="btn btn-link btn-sm p-0 me-2 text-decoration-none text-warning">
+                                    <i class="bi bi-pencil"></i>
+                                </button>
+                                <button onclick="deleteComment(${comment.id})" class="btn btn-link btn-sm p-0 text-decoration-none text-danger">
+                                    <i class="bi bi-trash"></i>
+                                </button>
+                            ` : ''}
+                        </div>
+                    </div>
+                </div>
+                
+                ${comment.replies && comment.replies.length > 0 ? `
+                    <div class="replies-container mt-3">
+                        ${comment.replies.map(reply => renderComment(reply, depth + 1)).join('')}
+                    </div>
+                ` : ''}
+                
+                ${isLoggedIn ? `
+                    <div id="replyForm${comment.id}" class="reply-form mt-2" style="display: none;">
+                        <textarea class="form-control mb-2" id="replyContent${comment.id}" rows="2" 
+                                  placeholder="답글을 작성해주세요..."></textarea>
+                        <button onclick="submitReply(${comment.id})" class="btn btn-primary btn-sm me-2">
+                            <i class="bi bi-send"></i> 답글 작성
+                        </button>
+                        <button onclick="hideReplyForm(${comment.id})" class="btn btn-outline-secondary btn-sm">
+                            취소
+                        </button>
+                    </div>
+                ` : ''}
+            </div>
+             `;
+         }
+        
+                 function showReplyForm(commentId) {
+             const replyForm = document.getElementById(`replyForm${commentId}`);
+             const editForm = document.getElementById(`editForm${commentId}`);
+             
+             // 다른 폼들 숨기기
+             hideAllForms();
+             
+             // 답글 폼 표시
+             replyForm.style.display = 'block';
+         }
+        
+        function hideReplyForm(commentId) {
+            const replyForm = document.getElementById(`replyForm${commentId}`);
+            replyForm.style.display = 'none';
+        }
+        
+        function submitReply(commentId) {
+            const content = document.getElementById(`replyContent${commentId}`).value.trim();
+            if (!content) {
+                alert('답글 내용을 입력해주세요.');
+                return;
+            }
+            
+            const postId = /*[[${post.id}]]*/ '';
+            
+            fetch(`/api/comments/${commentId}/replies`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    postId: postId,
+                    content: content
+                })
+            })
+            .then(response => {
+                if (response.ok) {
+                    hideReplyForm(commentId);
+                    loadComments();
+                    alert('답글이 작성되었습니다.');
+                } else {
+                    throw new Error('답글 작성에 실패했습니다.');
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert(error.message);
+            });
+        }
+        
+                 function deleteComment(commentId) {
+             if (confirm('정말로 이 댓글을 삭제하시겠습니까?\n하위 답글들도 함께 삭제됩니다.')) {
+                 fetch(`/api/comments/${commentId}`, {
+                     method: 'DELETE'
+                 })
+                 .then(response => {
+                     if (response.ok) {
+                         loadComments();
+                         alert('댓글과 하위 답글들이 삭제되었습니다.');
+                     } else {
+                         throw new Error('댓글 삭제에 실패했습니다.');
+                     }
+                 })
+                 .catch(error => {
+                     console.error('Error:', error);
+                     alert(error.message);
+                 });
+             }
+         }
+         
+                   // 댓글 수정 폼 표시
+          function editComment(commentId) {
+              const editForm = document.getElementById(`editForm${commentId}`);
+              const commentContent = document.getElementById(`commentContent${commentId}`);
+              const replyForm = document.getElementById(`replyForm${commentId}`);
+              
+              // 다른 폼들 숨기기
+              hideAllForms();
+              
+              // 댓글 내용 숨기고 수정 폼 표시
+              commentContent.style.display = 'none';
+              editForm.style.display = 'block';
+          }
+          
+          // 수정 폼 숨기기
+          function hideEditForm(commentId) {
+              const editForm = document.getElementById(`editForm${commentId}`);
+              const commentContent = document.getElementById(`commentContent${commentId}`);
+              
+              // 수정 폼 숨기고 댓글 내용 표시
+              editForm.style.display = 'none';
+              commentContent.style.display = 'block';
+          }
+         
+         // 댓글 수정 제출
+         function submitEdit(commentId) {
+             const content = document.getElementById(`editContent${commentId}`).value.trim();
+             if (!content) {
+                 alert('댓글 내용을 입력해주세요.');
+                 return;
+             }
+             
+             fetch(`/api/comments/${commentId}`, {
+                 method: 'PUT',
+                 headers: {
+                     'Content-Type': 'application/json'
+                 },
+                 body: JSON.stringify({
+                     content: content
+                 })
+             })
+             .then(response => {
+                 if (response.ok) {
+                     hideEditForm(commentId);
+                     loadComments();
+                     alert('댓글이 수정되었습니다.');
+                 } else {
+                     throw new Error('댓글 수정에 실패했습니다.');
+                 }
+             })
+             .catch(error => {
+                 console.error('Error:', error);
+                 alert(error.message);
+             });
+         }
+         
+                   // 모든 폼 숨기기
+          function hideAllForms() {
+              const replyForms = document.querySelectorAll('.reply-form');
+              const editForms = document.querySelectorAll('.edit-form');
+              const commentContents = document.querySelectorAll('.comment-content');
+              
+              replyForms.forEach(form => form.style.display = 'none');
+              editForms.forEach(form => form.style.display = 'none');
+              commentContents.forEach(content => content.style.display = 'block');
+          }
+        
+        // 페이지 로드 시 댓글 로드
+        document.addEventListener('DOMContentLoaded', function() {
+            loadComments();
+        });
+    </script>
+</body>
+</html>

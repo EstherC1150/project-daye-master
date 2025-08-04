@@ -269,3 +269,18 @@ JOIN user_roles ur ON u.id = ur.user_id;
 - Thymeleaf 템플릿에서 `xmlns:sec="http://www.thymeleaf.org/extras/spring-security"` 네임스페이스를 선언해야 합니다.
 - 보안 관련 정보는 서버 사이드에서도 검증해야 하며, 클라이언트 사이드 보안은 보조적인 역할만 합니다.
 - 프로덕션 환경에서는 데이터베이스 비밀번호를 환경 변수나 시크릿으로 관리해야 합니다. 
+
+## 나혼자만 정리
+- 서버 부분: src/main/java/com/project/demo/ --> Java 소스코드
+  - controller/: MVC컨트롤러(요청처리)
+  - service/: 비즈니스 로직
+  - repository/: 데이터 접근 계층
+  - entity/: 데이터베이스 엔티티
+  - config/: 설정 클래스들
+
+- 프론트 부분: src/main/resources/templates/ --> Thymeleaf HTML 템플릿
+  - index.html: 메인 페이지
+  - admin.html: 관리자 페이지
+  - user.html: 사용자 페이지
+  - profile.html: 프로필 페이지
+  

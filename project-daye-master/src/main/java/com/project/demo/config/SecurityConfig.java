@@ -18,31 +18,39 @@ public class SecurityConfig {
     private CustomUserDetailsService userDetailsService;
 
     @Bean
-    public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
-        http
-            .authorizeHttpRequests(authz -> authz
-                .requestMatchers("/", "/css/**", "/js/**", "/images/**", "/actuator/**").permitAll()
-                .requestMatchers("/admin/**").hasRole("ADMIN")
-                .requestMatchers("/user/**").hasRole("USER")
-                .requestMatchers("/profile/**").hasAnyRole("ADMIN", "USER")
-                .anyRequest().authenticated()
-            )
-            .formLogin(form -> form
-                .loginPage("/")
-                .defaultSuccessUrl("/")
-                .permitAll()
-            )
-            .logout(logout -> logout
-                .logoutSuccessUrl("/")
-                .permitAll()
-            )
-            .userDetailsService(userDetailsService);
-
-        return http.build();
+    public PasswordEncoder passwordEncoder() {
+        return new BCryptPasswordEncoder();
     }
 
     @Bean
-    public PasswordEncoder passwordEncoder() {
-        return new BCryptPasswordEncoder();
+    public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
+        http
+            .authorizeHttpRequests(authz -> authz
+                // 공개 접근 가능한 경로
+                .requestMatchers("/", "/posts", "/posts/**", "/files/**", "/auth/**", 
+                               "/.well-known/**", "/error").permitAll()
+                // 댓글 조회 API (게스트 접근 가능)
+                .requestMatchers("/api/comments/**").permitAll()
+                // 정적 리소스
+                .requestMatchers("/css/**", "/js/**", "/images/**", "/favicon.ico").permitAll()
+                // 로그인, 회원가입 페이지
+                .requestMatchers("/login", "/register").permitAll()
+                // 나머지는 인증 필요
+                .anyRequest().authenticated()
+            )
+            .formLogin(form -> form
+                .loginPage("/login")
+                .defaultSuccessUrl("/posts", true)  // 로그인 성공 시 항상 /posts로 이동
+                .failureUrl("/login?error=true")
+                .permitAll()
+            )
+            .logout(logout -> logout
+                .logoutSuccessUrl("/posts")
+                .permitAll()
+            )
+            .userDetailsService(userDetailsService)
+            .csrf(csrf -> csrf.disable());
+
+        return http.build();
     }
 } 
