@@ -18,8 +18,9 @@ import java.util.UUID;
 @Service
 public class FileService {
     
-    private static final String UPLOAD_DIR = "uploads/videos/";
-    private static final String THUMBNAIL_DIR = "uploads/thumbnails/";
+    // src/main/resources/static/ 내부로 변경
+    private static final String UPLOAD_DIR = "src/main/resources/static/uploads/videos/";
+    private static final String THUMBNAIL_DIR = "src/main/resources/static/uploads/thumbnails/";
     private static final long MAX_FILE_SIZE = 2L * 1024 * 1024 * 1024; // 2GB
     private static final String[] ALLOWED_EXTENSIONS = {".mp4", ".webm", ".ogv", ".avi", ".mov", ".mkv"};
     

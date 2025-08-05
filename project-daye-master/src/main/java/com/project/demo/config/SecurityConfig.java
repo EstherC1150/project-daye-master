@@ -27,20 +27,26 @@ public class SecurityConfig {
         http
             .authorizeHttpRequests(authz -> authz
                 // 공개 접근 가능한 경로
-                .requestMatchers("/", "/posts", "/posts/**", "/files/**", "/auth/**", 
-                               "/.well-known/**", "/error").permitAll()
+                .requestMatchers("/", "/posts", "/posts/**", "/files/**", "/auth/**",
+                                "/.well-known/**", "/error").permitAll()
+                // 업로드된 파일들 (동영상, 썸네일) - 모든 사용자 접근 가능
+                .requestMatchers("/uploads/**").permitAll()
                 // 댓글 조회 API (게스트 접근 가능)
                 .requestMatchers("/api/comments/**").permitAll()
                 // 정적 리소스
                 .requestMatchers("/css/**", "/js/**", "/images/**", "/favicon.ico").permitAll()
                 // 로그인, 회원가입 페이지
                 .requestMatchers("/login", "/register").permitAll()
+                // 게시글 작성/수정은 인증 필요
+                .requestMatchers("/posts/new", "/posts/*/edit", "/posts/create", "/posts/*/update").authenticated()
+                // 댓글 작성은 인증 필요
+                .requestMatchers("/api/comments/create").authenticated()
                 // 나머지는 인증 필요
                 .anyRequest().authenticated()
             )
             .formLogin(form -> form
                 .loginPage("/login")
-                .defaultSuccessUrl("/posts", true)  // 로그인 성공 시 항상 /posts로 이동
+                .defaultSuccessUrl("/posts", true)
                 .failureUrl("/login?error=true")
                 .permitAll()
             )
@@ -50,7 +56,7 @@ public class SecurityConfig {
             )
             .userDetailsService(userDetailsService)
             .csrf(csrf -> csrf.disable());
-
+    
         return http.build();
     }
 } 
