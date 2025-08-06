@@ -37,6 +37,9 @@ public class Post {
     @Column(name = "view_count")
     private Integer viewCount = 0;
     
+    @Column(name = "comment_count")
+    private Integer commentCount = 0;
+    
     // 동영상 파일 정보
     @Column(name = "video_filename")
     private String videoFilename;
@@ -74,5 +77,23 @@ public class Post {
     @PreUpdate
     protected void onUpdate() {
         updatedAt = LocalDateTime.now();
+    }
+    
+    public void updateCommentCount() {
+        this.commentCount = (int) comments.stream()
+                .filter(comment -> !comment.isDeleted())
+                .count();
+    }
+    
+    public void setCommentCount(int commentCount) {
+        this.commentCount = commentCount;
+    }
+    
+    public String getVideoPath() {
+        return videoFilename != null ? "/uploads/videos/" + videoFilename : null;
+    }
+    
+    public String getThumbnailPath() {
+        return thumbnailFilename != null ? "/uploads/thumbnails/" + thumbnailFilename : null;
     }
 } 

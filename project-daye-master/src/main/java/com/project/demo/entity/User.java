@@ -7,10 +7,12 @@ import lombok.AllArgsConstructor;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
+import com.fasterxml.jackson.annotation.JsonFormat;
 
 import java.util.Collection;
 import java.util.List;
 import java.util.stream.Collectors;
+import java.util.ArrayList;
 
 @Entity
 @Table(name = "users")
@@ -41,7 +43,7 @@ public class User implements UserDetails {
     @ElementCollection(fetch = FetchType.EAGER)
     @CollectionTable(name = "user_roles", joinColumns = @JoinColumn(name = "user_id"))
     @Column(name = "role")
-    private List<String> roles;
+    private List<String> roles = new ArrayList<>();
     
     @Column(name = "enabled")
     private boolean enabled = true;
@@ -54,6 +56,27 @@ public class User implements UserDetails {
     
     @Column(name = "credentials_non_expired")
     private boolean credentialsNonExpired = true;
+    
+    @Column(name = "created_at")
+    @JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm:ss")
+    private java.time.LocalDateTime createdAt = java.time.LocalDateTime.now();
+    
+    @PrePersist
+    protected void onCreate() {
+        if (roles == null) {
+            roles = new ArrayList<>();
+        }
+        if (createdAt == null) {
+            createdAt = java.time.LocalDateTime.now();
+        }
+    }
+    
+    @PostLoad
+    protected void onLoad() {
+        if (roles == null) {
+            roles = new ArrayList<>();
+        }
+    }
     
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {

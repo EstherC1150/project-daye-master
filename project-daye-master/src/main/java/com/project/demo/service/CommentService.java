@@ -23,11 +23,11 @@ public class CommentService {
     private final UserRepository userRepository;
     
     /**
-     * 게시글의 모든 댓글과 대댓글을 조회
+     * 게시글의 모든 댓글과 대댓글을 조회 (삭제되지 않은 것만)
      */
     @Transactional(readOnly = true)
     public List<Comment> getCommentsByPostId(Long postId) {
-        return commentRepository.findByPostIdWithReplies(postId);
+        return commentRepository.findByPostIdWithRepliesAndNotDeleted(postId);
     }
     
     /**
@@ -45,7 +45,13 @@ public class CommentService {
         comment.setAuthor(author);
         comment.setContent(content);
         
-        return commentRepository.save(comment);
+        Comment savedComment = commentRepository.save(comment);
+        
+        // 게시글의 댓글 수 업데이트
+        post.updateCommentCount();
+        postRepository.save(post);
+        
+        return savedComment;
     }
     
     /**
@@ -64,7 +70,14 @@ public class CommentService {
         reply.setContent(content);
         reply.setParent(parentComment);
         
-        return commentRepository.save(reply);
+        Comment savedReply = commentRepository.save(reply);
+        
+        // 게시글의 댓글 수 업데이트
+        Post post = parentComment.getPost();
+        post.updateCommentCount();
+        postRepository.save(post);
+        
+        return savedReply;
     }
     
     /**
@@ -78,12 +91,16 @@ public class CommentService {
             throw new IllegalArgumentException("댓글을 수정할 권한이 없습니다.");
         }
         
+        if (comment.isDeleted()) {
+            throw new IllegalArgumentException("삭제된 댓글은 수정할 수 없습니다.");
+        }
+        
         comment.setContent(content);
         return commentRepository.save(comment);
     }
     
     /**
-     * 댓글 삭제 (대댓글도 함께 삭제)
+     * 댓글 삭제 (소프트 삭제)
      */
     public void deleteComment(Long commentId, Long authorId) {
         Comment comment = commentRepository.findById(commentId)
@@ -93,36 +110,42 @@ public class CommentService {
             throw new IllegalArgumentException("댓글을 삭제할 권한이 없습니다.");
         }
         
-        // 대댓글들을 먼저 삭제
-        List<Comment> replies = commentRepository.findRepliesByCommentId(commentId);
-        commentRepository.deleteAll(replies);
+        if (comment.isDeleted()) {
+            throw new IllegalArgumentException("이미 삭제된 댓글입니다.");
+        }
         
-        // 댓글 삭제
-        commentRepository.delete(comment);
+        // 소프트 삭제
+        comment.delete();
+        commentRepository.save(comment);
+        
+        // 게시글의 댓글 수 업데이트
+        Post post = comment.getPost();
+        post.updateCommentCount();
+        postRepository.save(post);
     }
     
     /**
-     * 게시글의 댓글 수 조회
+     * 게시글의 댓글 수 조회 (삭제되지 않은 것만)
      */
     @Transactional(readOnly = true)
     public long getCommentCountByPostId(Long postId) {
-        return commentRepository.countByPostId(postId);
+        return commentRepository.countByPostIdAndNotDeleted(postId);
     }
     
     /**
-     * 댓글의 대댓글 수 조회
+     * 댓글의 대댓글 수 조회 (삭제되지 않은 것만)
      */
     @Transactional(readOnly = true)
     public long getReplyCountByCommentId(Long commentId) {
-        return commentRepository.countRepliesByCommentId(commentId);
+        return commentRepository.countRepliesByCommentIdAndNotDeleted(commentId);
     }
     
     /**
-     * 댓글 존재 여부 확인
+     * 댓글 존재 여부 확인 (삭제되지 않은 것만)
      */
     @Transactional(readOnly = true)
     public boolean existsById(Long commentId) {
-        return commentRepository.existsById(commentId);
+        return commentRepository.existsByIdAndNotDeleted(commentId);
     }
     
     /**
@@ -131,6 +154,8 @@ public class CommentService {
     @Transactional(readOnly = true)
     public boolean isAuthor(Long commentId, Long authorId) {
         Optional<Comment> comment = commentRepository.findById(commentId);
-        return comment.isPresent() && comment.get().getAuthor().getId().equals(authorId);
+        return comment.isPresent() && 
+               !comment.get().isDeleted() && 
+               comment.get().getAuthor().getId().equals(authorId);
     }
 } 

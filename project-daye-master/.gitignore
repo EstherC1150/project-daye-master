@@ -68,3 +68,8 @@ logs/
 ### Application Properties ###
 application-prod.properties
 application-dev.properties
+
+### Uploaded Files ###
+src/main/resources/static/uploads/videos/
+src/main/resources/static/uploads/thumbnails/
+uploads/

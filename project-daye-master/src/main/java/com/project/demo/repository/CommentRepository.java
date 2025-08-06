@@ -20,13 +20,30 @@ public interface CommentRepository extends JpaRepository<Comment, Long> {
            "ORDER BY c.createdAt ASC, r.createdAt ASC")
     List<Comment> findByPostIdWithReplies(@Param("postId") Long postId);
     
+    // 특정 게시글의 모든 댓글을 계층형으로 조회 (삭제되지 않은 것만)
+    @Query("SELECT c FROM Comment c " +
+           "LEFT JOIN FETCH c.replies r " +
+           "LEFT JOIN FETCH c.author " +
+           "LEFT JOIN FETCH r.author " +
+           "WHERE c.post.id = :postId AND c.parent IS NULL AND c.deleted = false " +
+           "ORDER BY c.createdAt ASC, r.createdAt ASC")
+    List<Comment> findByPostIdWithRepliesAndNotDeleted(@Param("postId") Long postId);
+    
     // 특정 게시글의 댓글 수 조회 (대댓글 포함)
     @Query("SELECT COUNT(c) FROM Comment c WHERE c.post.id = :postId")
     long countByPostId(@Param("postId") Long postId);
     
+    // 특정 게시글의 댓글 수 조회 (삭제되지 않은 것만)
+    @Query("SELECT COUNT(c) FROM Comment c WHERE c.post.id = :postId AND c.deleted = false")
+    long countByPostIdAndNotDeleted(@Param("postId") Long postId);
+    
     // 특정 댓글의 대댓글 수 조회
     @Query("SELECT COUNT(c) FROM Comment c WHERE c.parent.id = :commentId")
     long countRepliesByCommentId(@Param("commentId") Long commentId);
+    
+    // 특정 댓글의 대댓글 수 조회 (삭제되지 않은 것만)
+    @Query("SELECT COUNT(c) FROM Comment c WHERE c.parent.id = :commentId AND c.deleted = false")
+    long countRepliesByCommentIdAndNotDeleted(@Param("commentId") Long commentId);
     
     // 사용자가 작성한 댓글 조회
     List<Comment> findByAuthorIdOrderByCreatedAtDesc(Long authorId);
@@ -34,4 +51,8 @@ public interface CommentRepository extends JpaRepository<Comment, Long> {
     // 특정 댓글의 대댓글들 조회
     @Query("SELECT c FROM Comment c WHERE c.parent.id = :commentId")
     List<Comment> findRepliesByCommentId(@Param("commentId") Long commentId);
+    
+    // 댓글 존재 여부 확인 (삭제되지 않은 것만)
+    @Query("SELECT COUNT(c) > 0 FROM Comment c WHERE c.id = :commentId AND c.deleted = false")
+    boolean existsByIdAndNotDeleted(@Param("commentId") Long commentId);
 } 

@@ -4,6 +4,7 @@ import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
 import org.springframework.data.annotation.CreatedDate;
+import org.springframework.data.annotation.LastModifiedDate;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
 import java.time.LocalDateTime;
@@ -44,6 +45,13 @@ public class Comment {
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;
     
+    @LastModifiedDate
+    @Column(name = "updated_at")
+    private LocalDateTime updatedAt;
+    
+    @Column(name = "deleted", nullable = false)
+    private boolean deleted = false;
+    
     // 댓글인지 대댓글인지 확인하는 메서드
     public boolean isReply() {
         return parent != null;
@@ -52,6 +60,16 @@ public class Comment {
     // 댓글인지 확인하는 메서드
     public boolean isComment() {
         return parent == null;
+    }
+    
+    // 삭제된 댓글인지 확인하는 메서드
+    public boolean isDeleted() {
+        return deleted;
+    }
+    
+    // 댓글 삭제 메서드 (소프트 삭제)
+    public void delete() {
+        this.deleted = true;
     }
     
     // 대댓글 추가 메서드

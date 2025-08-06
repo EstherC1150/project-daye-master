@@ -31,16 +31,21 @@ public class SecurityConfig {
                                 "/.well-known/**", "/error").permitAll()
                 // 업로드된 파일들 (동영상, 썸네일) - 모든 사용자 접근 가능
                 .requestMatchers("/uploads/**").permitAll()
-                // 댓글 조회 API (게스트 접근 가능)
-                .requestMatchers("/api/comments/**").permitAll()
+                // 댓글 조회 API (GET 요청만 게스트 접근 가능)
+                .requestMatchers("/api/comments/{postId}").permitAll()
+                .requestMatchers("/api/comments/{postId}/count").permitAll()
                 // 정적 리소스
                 .requestMatchers("/css/**", "/js/**", "/images/**", "/favicon.ico").permitAll()
                 // 로그인, 회원가입 페이지
                 .requestMatchers("/login", "/register").permitAll()
-                // 게시글 작성/수정은 인증 필요
-                .requestMatchers("/posts/new", "/posts/*/edit", "/posts/create", "/posts/*/update").authenticated()
-                // 댓글 작성은 인증 필요
-                .requestMatchers("/api/comments/create").authenticated()
+                // 관리자 페이지 - ADMIN 권한 필요
+                .requestMatchers("/admin/**").hasRole("ADMIN")
+                // 게시글 작성/수정/삭제는 인증 필요
+                .requestMatchers("/posts/write", "/posts/*/edit", "/posts/create", "/posts/*/update", "/posts/*/delete").authenticated()
+                // 댓글 작성/수정/삭제는 인증 필요 (POST, PUT, DELETE)
+                .requestMatchers("/api/comments").authenticated()
+                .requestMatchers("/api/comments/*/replies").authenticated()
+                .requestMatchers("/api/comments/*").authenticated()
                 // 나머지는 인증 필요
                 .anyRequest().authenticated()
             )
@@ -59,4 +64,4 @@ public class SecurityConfig {
     
         return http.build();
     }
-} 
+}

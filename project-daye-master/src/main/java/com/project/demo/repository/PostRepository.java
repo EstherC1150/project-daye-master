@@ -11,12 +11,26 @@ import org.springframework.stereotype.Repository;
 @Repository
 public interface PostRepository extends JpaRepository<Post, Long> {
     
-    @Query("SELECT p FROM Post p ORDER BY p.createdAt DESC")
     Page<Post> findAllByOrderByCreatedAtDesc(Pageable pageable);
     
-    @Query("SELECT p FROM Post p WHERE p.title LIKE %:keyword% OR p.content LIKE %:keyword% ORDER BY p.createdAt DESC")
-    Page<Post> findByTitleContainingOrContentContaining(@Param("keyword") String keyword, Pageable pageable);
+    @Query("SELECT p FROM Post p WHERE " +
+           "LOWER(p.title) LIKE LOWER(CONCAT('%', :keyword, '%')) OR " +
+           "LOWER(p.content) LIKE LOWER(CONCAT('%', :keyword, '%')) OR " +
+           "LOWER(p.author.fullName) LIKE LOWER(CONCAT('%', :keyword, '%')) OR " +
+           "LOWER(p.videoOriginalName) LIKE LOWER(CONCAT('%', :keyword, '%'))")
+    Page<Post> findBySearchTypeAndKeyword(@Param("keyword") String keyword, Pageable pageable);
+    
+    Page<Post> findByTitleContaining(String title, Pageable pageable);
+    
+    Page<Post> findByContentContaining(String content, Pageable pageable);
+    
+    Page<Post> findByAuthorFullNameContaining(String authorFullName, Pageable pageable);
+    
+    Page<Post> findByVideoOriginalNameContaining(String videoOriginalName, Pageable pageable);
     
     @Query("SELECT p FROM Post p WHERE p.author.id = :authorId ORDER BY p.createdAt DESC")
     Page<Post> findByAuthorId(@Param("authorId") Long authorId, Pageable pageable);
+    
+    @Query("SELECT p FROM Post p WHERE p.title LIKE %:keyword% OR p.content LIKE %:keyword% ORDER BY p.createdAt DESC")
+    Page<Post> findByTitleContainingOrContentContaining(@Param("keyword") String keyword, Pageable pageable);
 } 

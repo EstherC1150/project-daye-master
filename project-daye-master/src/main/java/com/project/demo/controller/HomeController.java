@@ -11,11 +11,6 @@ public class HomeController {
         return "redirect:/posts";
     }
 
-    @GetMapping("/admin")
-    public String admin() {
-        return "redirect:/posts"; // admin 페이지를 갤러리로 리다이렉트
-    }
-
     @GetMapping("/user")
     public String user() {
         return "redirect:/posts"; // user 페이지를 갤러리로 리다이렉트

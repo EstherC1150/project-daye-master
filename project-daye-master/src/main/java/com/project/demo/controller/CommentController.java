@@ -28,21 +28,14 @@ public class CommentController {
     @GetMapping("/{postId}")
     public ResponseEntity<List<CommentDto>> getComments(@PathVariable Long postId) {
         try {
-            System.out.println("=== 댓글 목록 조회 요청: postId=" + postId + " ===");
-            
             List<Comment> comments = commentService.getCommentsByPostId(postId);
-            System.out.println("조회된 댓글 수: " + comments.size());
             
             List<CommentDto> commentDtos = comments.stream()
                     .map(this::convertToDto)
                     .collect(Collectors.toList());
             
-            System.out.println("✅ 댓글 DTO 변환 완료: " + commentDtos.size() + "개");
-            
             return ResponseEntity.ok(commentDtos);
         } catch (Exception e) {
-            System.err.println("❌ 댓글 조회 중 오류 발생: " + e.getMessage());
-            e.printStackTrace();
             return ResponseEntity.status(500).body(new ArrayList<>());
         }
     }
@@ -54,26 +47,17 @@ public class CommentController {
     public ResponseEntity<CommentDto> createComment(@RequestBody CreateCommentRequest request, 
                                                    Authentication authentication) {
         try {
-            System.out.println("=== 댓글 작성 요청 ===");
-            System.out.println("postId: " + request.getPostId());
-            System.out.println("content: " + request.getContent());
-            System.out.println("user: " + (authentication != null ? authentication.getName() : "null"));
-            
             if (authentication == null || !authentication.isAuthenticated()) {
-                System.err.println("❌ 인증되지 않은 사용자");
                 return ResponseEntity.status(401).build();
             }
             
-            User currentUser = userService.getCurrentUser(authentication);
-            System.out.println("현재 사용자: " + currentUser.getUsername());
+            User currentUser = userService.findByUsername(authentication.getName())
+                    .orElseThrow(() -> new RuntimeException("사용자를 찾을 수 없습니다."));
             
             Comment comment = commentService.createComment(request.getPostId(), currentUser.getId(), request.getContent());
-            System.out.println("✅ 댓글 작성 완료: " + comment.getId());
             
             return ResponseEntity.ok(convertToDto(comment));
         } catch (Exception e) {
-            System.err.println("❌ 댓글 작성 중 오류: " + e.getMessage());
-            e.printStackTrace();
             return ResponseEntity.status(500).build();
         }
     }
@@ -86,20 +70,16 @@ public class CommentController {
                                                  @RequestBody CreateCommentRequest request,
                                                  Authentication authentication) {
         try {
-            System.out.println("=== 답글 작성 요청: commentId=" + commentId + " ===");
-            
             if (authentication == null || !authentication.isAuthenticated()) {
                 return ResponseEntity.status(401).build();
             }
             
-            User currentUser = userService.getCurrentUser(authentication);
+            User currentUser = userService.findByUsername(authentication.getName())
+                    .orElseThrow(() -> new RuntimeException("사용자를 찾을 수 없습니다."));
             Comment reply = commentService.createReply(commentId, currentUser.getId(), request.getContent());
-            System.out.println("✅ 답글 작성 완료: " + reply.getId());
             
             return ResponseEntity.ok(convertToDto(reply));
         } catch (Exception e) {
-            System.err.println("❌ 답글 작성 중 오류: " + e.getMessage());
-            e.printStackTrace();
             return ResponseEntity.status(500).build();
         }
     }
@@ -112,20 +92,16 @@ public class CommentController {
                                                    @RequestBody UpdateCommentRequest request,
                                                    Authentication authentication) {
         try {
-            System.out.println("=== 댓글 수정 요청: commentId=" + commentId + " ===");
-            
             if (authentication == null || !authentication.isAuthenticated()) {
                 return ResponseEntity.status(401).build();
             }
             
-            User currentUser = userService.getCurrentUser(authentication);
+            User currentUser = userService.findByUsername(authentication.getName())
+                    .orElseThrow(() -> new RuntimeException("사용자를 찾을 수 없습니다."));
             Comment comment = commentService.updateComment(commentId, currentUser.getId(), request.getContent());
-            System.out.println("✅ 댓글 수정 완료: " + comment.getId());
             
             return ResponseEntity.ok(convertToDto(comment));
         } catch (Exception e) {
-            System.err.println("❌ 댓글 수정 중 오류: " + e.getMessage());
-            e.printStackTrace();
             return ResponseEntity.status(500).build();
         }
     }
@@ -136,20 +112,16 @@ public class CommentController {
     @DeleteMapping("/{commentId}")
     public ResponseEntity<Void> deleteComment(@PathVariable Long commentId, Authentication authentication) {
         try {
-            System.out.println("=== 댓글 삭제 요청: commentId=" + commentId + " ===");
-            
             if (authentication == null || !authentication.isAuthenticated()) {
                 return ResponseEntity.status(401).build();
             }
             
-            User currentUser = userService.getCurrentUser(authentication);
+            User currentUser = userService.findByUsername(authentication.getName())
+                    .orElseThrow(() -> new RuntimeException("사용자를 찾을 수 없습니다."));
             commentService.deleteComment(commentId, currentUser.getId());
-            System.out.println("✅ 댓글 삭제 완료: " + commentId);
             
             return ResponseEntity.ok().build();
         } catch (Exception e) {
-            System.err.println("❌ 댓글 삭제 중 오류: " + e.getMessage());
-            e.printStackTrace();
             return ResponseEntity.status(500).build();
         }
     }
@@ -169,10 +141,26 @@ public class CommentController {
     private CommentDto convertToDto(Comment comment) {
         CommentDto dto = new CommentDto();
         dto.setId(comment.getId());
-        dto.setContent(comment.getContent());
-        dto.setAuthorName(comment.getAuthor().getFullName());
-        dto.setAuthorUsername(comment.getAuthor().getUsername());
+        
+        // 삭제된 댓글인지 확인
+        if (comment.isDeleted()) {
+            dto.setContent("삭제된 댓글입니다.");
+            dto.setAuthorName("알 수 없음");
+            dto.setAuthorUsername("unknown");
+            dto.setDeleted(true);
+        } else {
+            dto.setContent(comment.getContent());
+            dto.setAuthorName(comment.getAuthor().getFullName());
+            dto.setAuthorUsername(comment.getAuthor().getUsername());
+            dto.setDeleted(false);
+        }
+        
         dto.setCreatedAt(comment.getCreatedAt().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")));
+        if (comment.getUpdatedAt() != null) {
+            dto.setUpdatedAt(comment.getUpdatedAt().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")));
+        } else {
+            dto.setUpdatedAt(comment.getCreatedAt().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")));
+        }
         dto.setReply(comment.isReply());
         
         // 대댓글들도 변환 - null 체크 추가
@@ -195,7 +183,9 @@ public class CommentController {
         private String authorName;
         private String authorUsername;
         private String createdAt;
+        private String updatedAt;
         private boolean reply;
+        private boolean deleted;
         private List<CommentDto> replies = new ArrayList<>(); // 기본값으로 빈 리스트
         
         // Getters and Setters
@@ -214,11 +204,17 @@ public class CommentController {
         public String getCreatedAt() { return createdAt; }
         public void setCreatedAt(String createdAt) { this.createdAt = createdAt; }
         
+        public String getUpdatedAt() { return updatedAt; }
+        public void setUpdatedAt(String updatedAt) { this.updatedAt = updatedAt; }
+        
         public boolean isReply() { return reply; }
         public void setReply(boolean reply) { this.reply = reply; }
         
         public List<CommentDto> getReplies() { return replies; }
         public void setReplies(List<CommentDto> replies) { this.replies = replies != null ? replies : new ArrayList<>(); }
+        
+        public boolean isDeleted() { return deleted; }
+        public void setDeleted(boolean deleted) { this.deleted = deleted; }
     }
     
     public static class CreateCommentRequest {

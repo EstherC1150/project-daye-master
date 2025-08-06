@@ -1,0 +1,811 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>사용자 관리</title>
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Bootstrap Icons -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css" rel="stylesheet">
+    <style>
+        .navbar-brand {
+            font-weight: bold;
+        }
+        .table-responsive {
+            border-radius: 8px;
+            overflow: hidden;
+        }
+        .table {
+            background-color: #f8f9fa;
+            border-radius: 8px;
+            overflow: hidden;
+        }
+        .table th {
+            background-color: #495057;
+            color: white;
+            border: none;
+            font-weight: 600;
+        }
+        .table td {
+            border-color: #dee2e6;
+            vertical-align: middle;
+        }
+        .table tbody tr:hover {
+            background-color: #e9ecef;
+        }
+        .btn-sm {
+            padding: 0.25rem 0.5rem;
+            font-size: 0.875rem;
+        }
+        .search-form {
+            background: #f8f9fa;
+            border-radius: 8px;
+            padding: 1rem;
+            margin-bottom: 1rem;
+        }
+        .pagination .page-link {
+            color: #667eea;
+        }
+        .pagination .page-item.active .page-link {
+            background-color: #667eea;
+            border-color: #667eea;
+        }
+        .status-badge {
+            font-size: 0.75rem;
+        }
+        .bulk-actions {
+            background: #f8f9fa;
+            border-radius: 8px;
+            padding: 1rem;
+            margin-bottom: 1rem;
+        }
+        .user-row {
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+        .user-row:hover {
+            background-color: #f8f9fa;
+        }
+        .modal-header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+        .btn-outline-success {
+            color: #198754;
+            border-color: #198754;
+        }
+        .btn-outline-success:hover {
+            color: white;
+            background-color: #198754;
+            border-color: #198754;
+        }
+        .btn-outline-warning {
+            color: #fd7e14;
+            border-color: #fd7e14;
+        }
+        .btn-outline-warning:hover {
+            color: white;
+            background-color: #fd7e14;
+            border-color: #fd7e14;
+        }
+        .btn-outline-danger {
+            color: #dc3545;
+            border-color: #dc3545;
+        }
+        .btn-outline-danger:hover {
+            color: white;
+            background-color: #dc3545;
+            border-color: #dc3545;
+        }
+        .form-check-input:checked {
+            background-color: #495057;
+            border-color: #495057;
+        }
+        .btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+    </style>
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+        <div class="container">
+            <a class="navbar-brand" href="/posts">
+                <i class="bi bi-camera-video"></i> 동영상 갤러리
+            </a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav me-auto">
+                    <li class="nav-item">
+                        <a class="nav-link" href="/posts">홈</a>
+                    </li>
+                    <li class="nav-item" sec:authorize="hasRole('ADMIN')">
+                        <a class="nav-link" href="/admin">관리자</a>
+                    </li>
+                </ul>
+                <ul class="navbar-nav">
+                    <li class="nav-item" sec:authorize="!isAuthenticated()">
+                        <a class="nav-link" href="/login">로그인</a>
+                    </li>
+                    <li class="nav-item" sec:authorize="!isAuthenticated()">
+                        <a class="nav-link" href="/register">회원가입</a>
+                    </li>
+                    <li class="nav-item dropdown" sec:authorize="isAuthenticated()">
+                        <a class="nav-link dropdown-toggle" href="#" id="navbarDropdown" role="button" data-bs-toggle="dropdown">
+                            <i class="bi bi-person-circle"></i> <span sec:authentication="name"></span>
+                        </a>
+                        <ul class="dropdown-menu">
+                            <li><a class="dropdown-item" href="/profile">프로필</a></li>
+                            <li><hr class="dropdown-divider"></li>
+                            <li>
+                                <form th:action="@{/logout}" method="post" style="display: inline;">
+                                    <button type="submit" class="dropdown-item">로그아웃</button>
+                                </form>
+                            </li>
+                        </ul>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container mt-4">
+        <!-- Header -->
+        <div class="row mb-4">
+            <div class="col-md-8">
+                <h2><i class="bi bi-people"></i> 사용자 관리</h2>
+                <p class="text-muted">전체 사용자 목록 및 관리</p>
+            </div>
+            <div class="col-md-4 text-end">
+                <a href="/admin" class="btn btn-outline-secondary">
+                    <i class="bi bi-arrow-left"></i> 대시보드로
+                </a>
+            </div>
+        </div>
+
+        <!-- 검색 및 필터 -->
+        <div class="search-form">
+            <form th:action="@{/admin/users}" method="get" class="row g-3">
+                <div class="col-md-3">
+                    <select name="searchType" class="form-select" id="searchTypeSelect">
+                        <option value="all" th:selected="${searchType == 'all'}">전체</option>
+                        <option value="username" th:selected="${searchType == 'username'}">아이디</option>
+                        <option value="fullName" th:selected="${searchType == 'fullName'}">이름</option>
+                        <option value="email" th:selected="${searchType == 'email'}">이메일</option>
+                    </select>
+                </div>
+                <div class="col-md-6">
+                    <input type="text" name="search" class="form-control" 
+                           th:value="${search}" placeholder="검색어를 입력하세요">
+                </div>
+                <div class="col-md-2">
+                    <select name="size" class="form-select" id="pageSizeSelect">
+                        <option value="10" th:selected="${size == 10}">10개씩</option>
+                        <option value="25" th:selected="${size == 25}">25개씩</option>
+                        <option value="50" th:selected="${size == 50}">50개씩</option>
+                    </select>
+                </div>
+                <div class="col-md-1">
+                    <button type="submit" class="btn btn-primary w-100">
+                        <i class="bi bi-search"></i>
+                    </button>
+                </div>
+            </form>
+        </div>
+
+                 <!-- 일괄 삭제 -->
+         <div class="bulk-actions" th:if="${!users.isEmpty()}">
+             <div class="row align-items-center">
+                 <div class="col-md-6">
+                     <span class="text-muted">선택한 사용자를 일괄 삭제할 수 있습니다.</span>
+                 </div>
+                 <div class="col-md-6 text-end">
+                     <button type="button" class="btn btn-danger btn-sm" id="bulkDeleteBtn" disabled>
+                         <i class="bi bi-trash"></i> 선택 삭제
+                     </button>
+                 </div>
+             </div>
+         </div>
+
+        <!-- 사용자 테이블 -->
+        <div class="table-responsive">
+            <table class="table table-hover">
+                <thead>
+                    <tr>
+                        <th width="50">
+                            <input type="checkbox" class="form-check-input" id="selectAllTable">
+                        </th>
+                        <th>아이디</th>
+                        <th>이름</th>
+                        <th>이메일</th>
+                        <th>권한</th>
+                        <th>상태</th>
+                        <th>가입일</th>
+                        <th width="100">활성화</th>
+                        <th width="80">삭제</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr th:if="${users.isEmpty()}">
+                        <td colspan="10" class="text-center text-muted py-4">
+                            <i class="bi bi-people" style="font-size: 2rem;"></i>
+                            <p class="mt-2">사용자가 없습니다</p>
+                        </td>
+                    </tr>
+                    <tr th:each="user : ${users}" class="user-row" th:data-user-id="${user.id}">
+                        <td>
+                            <input type="checkbox" class="form-check-input user-checkbox" 
+                                   th:value="${user.id}" th:disabled="${user.roles.contains('ADMIN')}">
+                        </td>
+                        <td>
+                            <strong th:text="${user.username}">아이디</strong>
+                        </td>
+                        <td th:text="${user.fullName}">이름</td>
+                        <td th:text="${user.email}">이메일</td>
+                        <td>
+                            <span th:each="role : ${user.roles}" 
+                                  th:class="${role == 'ADMIN' ? 'badge bg-danger' : 'badge bg-primary'}"
+                                  th:text="${role == 'ADMIN' ? '관리자' : '사용자'}">권한</span>
+                        </td>
+                        <td>
+                            <span th:class="${user.enabled ? 'badge bg-success' : 'badge bg-secondary'}"
+                                  th:text="${user.enabled ? '활성' : '비활성'}" class="status-badge">상태</span>
+                        </td>
+                        <td th:text="${#temporals.format(user.createdAt, 'yyyy-MM-dd')}">가입일</td>
+                        <td>
+                            <button type="button" class="btn btn-outline-warning btn-sm toggle-status-btn"
+                                    th:data-user-id="${user.id}"
+                                    th:disabled="${user.roles.contains('ADMIN')}"
+                                    th:title="${user.enabled ? '사용자 비활성화' : '사용자 활성화'}">
+                                <i class="bi bi-toggle-on" th:if="${user.enabled}"></i>
+                                <i class="bi bi-toggle-off" th:unless="${user.enabled}"></i>
+                            </button>
+                        </td>
+                        <td>
+                            <button type="button" class="btn btn-outline-danger btn-sm delete-user-btn"
+                                    th:data-user-id="${user.id}"
+                                    th:disabled="${user.roles.contains('ADMIN')}"
+                                    title="사용자 삭제">
+                                <i class="bi bi-trash"></i>
+                            </button>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <!-- 페이지네이션 -->
+        <nav th:if="${totalPages > 1}">
+            <ul class="pagination justify-content-center">
+                <li class="page-item" th:classappend="${currentPage == 0 ? 'disabled' : ''}">
+                    <a class="page-link" th:href="@{/admin/users(page=${currentPage - 1}, size=${size}, search=${search}, searchType=${searchType})}">
+                        <i class="bi bi-chevron-left"></i>
+                    </a>
+                </li>
+                
+                <li class="page-item" th:each="pageNum : ${#numbers.sequence(0, totalPages - 1)}"
+                    th:classappend="${pageNum == currentPage ? 'active' : ''}">
+                    <a class="page-link" th:href="@{/admin/users(page=${pageNum}, size=${size}, search=${search}, searchType=${searchType})}"
+                       th:text="${pageNum + 1}">1</a>
+                </li>
+                
+                <li class="page-item" th:classappend="${currentPage == totalPages - 1 ? 'disabled' : ''}">
+                    <a class="page-link" th:href="@{/admin/users(page=${currentPage + 1}, size=${size}, search=${search}, searchType=${searchType})}">
+                        <i class="bi bi-chevron-right"></i>
+                    </a>
+                </li>
+            </ul>
+        </nav>
+
+        <!-- 통계 정보 -->
+        <div class="row mt-4">
+            <div class="col-md-6">
+                <p class="text-muted">
+                    총 <strong th:text="${totalItems}">0</strong>명의 사용자
+                    (페이지 <strong th:text="${currentPage + 1}">1</strong> / 
+                    <strong th:text="${totalPages}">1</strong>)
+                </p>
+            </div>
+        </div>
+    </div>
+
+    <!-- 사용자 정보 수정 모달 -->
+    <div class="modal fade" id="userEditModal" tabindex="-1">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">
+                        <i class="bi bi-person-gear"></i> 사용자 정보 수정
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="userEditForm">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label class="form-label">아이디</label>
+                                    <input type="text" class="form-control" id="editUsername" readonly>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label class="form-label">가입일</label>
+                                    <input type="text" class="form-control" id="editCreatedAt" readonly>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label class="form-label">이름 *</label>
+                                    <input type="text" class="form-control" id="editFullName" required>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label class="form-label">이메일 *</label>
+                                    <input type="email" class="form-control" id="editEmail" required>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label class="form-label">전화번호</label>
+                                    <input type="text" class="form-control" id="editPhoneNumber">
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label class="form-label">상태</label>
+                                    <select class="form-select" id="editEnabled">
+                                        <option value="true">활성</option>
+                                        <option value="false">비활성</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">권한</label>
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" id="editRoleUser" value="USER">
+                                <label class="form-check-label" for="editRoleUser">사용자</label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" id="editRoleAdmin" value="ADMIN">
+                                <label class="form-check-label" for="editRoleAdmin">관리자</label>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">취소</button>
+                    <button type="button" class="btn btn-primary" id="saveUserBtn">
+                        <i class="bi bi-check"></i> 저장
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    
+    <script>
+        // CSRF 토큰 설정 (Thymeleaf에서 값을 가져오는 방식 수정)
+        let csrfToken = '';
+        let csrfHeader = '';
+        
+        // meta 태그에서 CSRF 정보 가져오기 (추가해야 할 부분)
+        const csrfTokenMeta = document.querySelector('meta[name="_csrf"]');
+        const csrfHeaderMeta = document.querySelector('meta[name="_csrf_header"]');
+        
+        if (csrfTokenMeta) {
+            csrfToken = csrfTokenMeta.getAttribute('content');
+        }
+        if (csrfHeaderMeta) {
+            csrfHeader = csrfHeaderMeta.getAttribute('content');
+        }
+
+        // 전역 변수로 모달 인스턴스 저장
+        let userEditModal = null;
+
+        // 페이지 로드 시 초기화
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('페이지 로드 완료');
+            
+            // Bootstrap 모달 인스턴스 생성
+            const modalElement = document.getElementById('userEditModal');
+            if (modalElement) {
+                userEditModal = new bootstrap.Modal(modalElement);
+            }
+            
+            initializeEventListeners();
+            console.log('초기화 완료');
+        });
+
+        function initializeEventListeners() {
+            // 검색 타입 변경 시 검색어 초기화
+            const searchTypeSelect = document.getElementById('searchTypeSelect');
+            if (searchTypeSelect) {
+                searchTypeSelect.addEventListener('change', function() {
+                    const searchInput = document.querySelector('input[name="search"]');
+                    if (searchInput) {
+                        searchInput.value = '';
+                    }
+                    this.form.submit();
+                });
+            }
+
+            // 페이지 크기 변경
+            const pageSizeSelect = document.getElementById('pageSizeSelect');
+            if (pageSizeSelect) {
+                pageSizeSelect.addEventListener('change', function() {
+                    this.form.submit();
+                });
+            }
+
+            // 전체 선택 체크박스들
+            setupSelectAllCheckboxes();
+            
+            // 개별 체크박스 변경
+            setupIndividualCheckboxes();
+
+            // 사용자 행 클릭 이벤트
+            setupUserRowClickEvents();
+            
+            // 버튼 이벤트들
+            setupButtonEvents();
+            
+            // 모달 저장 버튼
+            setupModalSaveButton();
+            
+            // 일괄 삭제 버튼
+            setupBulkDeleteButton();
+        }
+
+                 function setupSelectAllCheckboxes() {
+             const selectAllTable = document.getElementById('selectAllTable');
+             
+             if (selectAllTable) {
+                 selectAllTable.addEventListener('change', function() {
+                     const checkboxes = document.querySelectorAll('.user-checkbox:not(:disabled)');
+                     checkboxes.forEach(checkbox => {
+                         checkbox.checked = this.checked;
+                     });
+                     updateSelectAllStates();
+                     updateBulkDeleteButton();
+                 });
+             }
+         }
+
+        function setupIndividualCheckboxes() {
+            document.querySelectorAll('.user-checkbox').forEach(checkbox => {
+                checkbox.addEventListener('change', function(e) {
+                    e.stopPropagation();
+                    updateSelectAllStates();
+                    updateBulkDeleteButton();
+                });
+            });
+        }
+
+        function setupUserRowClickEvents() {
+            const userRows = document.querySelectorAll('.user-row');
+            console.log('사용자 행 개수:', userRows.length);
+            
+            userRows.forEach(row => {
+                row.addEventListener('click', function(e) {
+                    // 버튼이나 체크박스 클릭 시에는 모달을 열지 않음
+                    if (e.target.closest('button') || 
+                        e.target.closest('input[type="checkbox"]') ||
+                        e.target.closest('.btn-group')) {
+                        return;
+                    }
+                    
+                    const userId = this.dataset.userId;
+                    console.log('사용자 행 클릭됨, userId:', userId);
+                    if (userId) {
+                        loadUserInfo(userId);
+                    }
+                });
+            });
+        }
+
+                 function setupButtonEvents() {
+             // 상태 변경 버튼
+            document.querySelectorAll('.toggle-status-btn').forEach(btn => {
+                btn.addEventListener('click', function(e) {
+                    e.stopPropagation();
+                    const userId = this.dataset.userId;
+                    console.log('상태 변경 버튼 클릭됨, userId:', userId);
+                    toggleUserStatus(userId);
+                });
+            });
+
+            // 삭제 버튼
+            document.querySelectorAll('.delete-user-btn').forEach(btn => {
+                btn.addEventListener('click', function(e) {
+                    e.stopPropagation();
+                    const userId = this.dataset.userId;
+                    console.log('삭제 버튼 클릭됨, userId:', userId);
+                    deleteUser(userId);
+                });
+            });
+        }
+
+                 function updateSelectAllStates() {
+             const checkboxes = document.querySelectorAll('.user-checkbox:not(:disabled)');
+             const checkedBoxes = document.querySelectorAll('.user-checkbox:checked');
+             const selectAllTable = document.getElementById('selectAllTable');
+             
+             const allChecked = checkboxes.length > 0 && checkboxes.length === checkedBoxes.length;
+             const someChecked = checkedBoxes.length > 0;
+             
+             if (selectAllTable) {
+                 selectAllTable.checked = allChecked;
+                 selectAllTable.indeterminate = someChecked && !allChecked;
+             }
+         }
+
+        function updateBulkDeleteButton() {
+            const checkedBoxes = document.querySelectorAll('.user-checkbox:checked');
+            const bulkDeleteBtn = document.getElementById('bulkDeleteBtn');
+            if (bulkDeleteBtn) {
+                bulkDeleteBtn.disabled = checkedBoxes.length === 0;
+            }
+        }
+
+        function loadUserInfo(userId) {
+            console.log('사용자 정보 로드 시작, userId:', userId);
+            console.log('CSRF Token:', csrfToken);
+            console.log('CSRF Header:', csrfHeader);
+            
+            // 실제 API 호출
+            fetch(`/admin/users/${userId}`, {
+                method: 'GET',
+                headers: {
+                    'Content-Type': 'application/json'
+                }
+            })
+            .then(response => {
+                console.log('응답 상태:', response.status);
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                return response.json();
+            })
+            .then(user => {
+                console.log('받은 사용자 정보:', user);
+                
+                // 모달 폼에 사용자 정보 채우기
+                document.getElementById('editUsername').value = user.username || '';
+                document.getElementById('editCreatedAt').value = user.createdAt ? new Date(user.createdAt).toLocaleDateString('ko-KR') : '';
+                document.getElementById('editFullName').value = user.fullName || '';
+                document.getElementById('editEmail').value = user.email || '';
+                document.getElementById('editPhoneNumber').value = user.phoneNumber || '';
+                document.getElementById('editEnabled').value = user.enabled ? 'true' : 'false';
+                
+                // 권한 체크박스 설정
+                document.getElementById('editRoleUser').checked = user.roles && user.roles.includes('USER');
+                document.getElementById('editRoleAdmin').checked = user.roles && user.roles.includes('ADMIN');
+                
+                                 // 모달에 사용자 ID 저장
+                 document.getElementById('userEditModal').dataset.userId = userId;
+                 
+                 // 관리자 본인인지 확인 (현재 로그인한 사용자와 비교)
+                 const currentUserId = /*[[${#authentication.principal.id}]]*/ '';
+                 const isCurrentUser = currentUserId == userId;
+                 const isAdmin = user.roles && user.roles.includes('ADMIN');
+                 
+                 // 관리자 본인이면 수정 불가능하게 설정
+                 if (isCurrentUser && isAdmin) {
+                     // 모든 입력 필드 비활성화
+                     document.getElementById('editFullName').disabled = true;
+                     document.getElementById('editEmail').disabled = true;
+                     document.getElementById('editPhoneNumber').disabled = true;
+                     document.getElementById('editEnabled').disabled = true;
+                     document.getElementById('editRoleUser').disabled = true;
+                     document.getElementById('editRoleAdmin').disabled = true;
+                     document.getElementById('saveUserBtn').disabled = true;
+                     
+                     // 경고 메시지 표시
+                     const warningDiv = document.createElement('div');
+                     warningDiv.className = 'alert alert-warning mt-3';
+                     warningDiv.innerHTML = '<i class="bi bi-exclamation-triangle"></i> <strong>관리자 본인은 수정할 수 없습니다.</strong>';
+                     document.getElementById('userEditForm').appendChild(warningDiv);
+                 } else {
+                     // 일반 사용자면 모든 필드 활성화
+                     document.getElementById('editFullName').disabled = false;
+                     document.getElementById('editEmail').disabled = false;
+                     document.getElementById('editPhoneNumber').disabled = false;
+                     document.getElementById('editEnabled').disabled = false;
+                     document.getElementById('editRoleUser').disabled = false;
+                     document.getElementById('editRoleAdmin').disabled = false;
+                     document.getElementById('saveUserBtn').disabled = false;
+                     
+                     // 기존 경고 메시지 제거
+                     const existingWarning = document.querySelector('.alert-warning');
+                     if (existingWarning) {
+                         existingWarning.remove();
+                     }
+                 }
+                 
+                 // 모달 표시
+                 if (userEditModal) {
+                     userEditModal.show();
+                     console.log('모달 표시됨');
+                 } else {
+                     console.error('모달 인스턴스가 없습니다');
+                 }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('사용자 정보를 불러오는데 실패했습니다: ' + error.message);
+            });
+        }
+
+        function setupModalSaveButton() {
+            const saveBtn = document.getElementById('saveUserBtn');
+            if (saveBtn) {
+                saveBtn.addEventListener('click', function() {
+                    const userId = document.getElementById('userEditModal').dataset.userId;
+                    const formData = {
+                        fullName: document.getElementById('editFullName').value,
+                        email: document.getElementById('editEmail').value,
+                        phoneNumber: document.getElementById('editPhoneNumber').value,
+                        enabled: document.getElementById('editEnabled').value === 'true',
+                        roles: []
+                    };
+                    
+                    // 선택된 권한들 수집
+                    if (document.getElementById('editRoleUser').checked) {
+                        formData.roles.push('USER');
+                    }
+                    if (document.getElementById('editRoleAdmin').checked) {
+                        formData.roles.push('ADMIN');
+                    }
+                    
+                    // 최소 하나의 권한은 있어야 함
+                    if (formData.roles.length === 0) {
+                        formData.roles.push('USER');
+                    }
+                    
+                    console.log('저장할 데이터:', formData);
+                    
+                                         fetch(`/admin/users/${userId}/update`, {
+                         method: 'POST',
+                         headers: {
+                             'Content-Type': 'application/json'
+                         },
+                         body: JSON.stringify(formData)
+                     })
+                    .then(response => response.text())
+                    .then(result => {
+                        if (result === 'success') {
+                            alert('사용자 정보가 수정되었습니다.');
+                            userEditModal.hide();
+                            location.reload();
+                        } else {
+                            alert('사용자 정보 수정에 실패했습니다: ' + result);
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Error:', error);
+                        alert('사용자 정보 수정 중 오류가 발생했습니다.');
+                    });
+                });
+            }
+        }
+
+        function toggleUserStatus(userId) {
+            if (confirm('사용자 상태를 변경하시겠습니까?')) {
+                console.log('상태 변경 요청:', userId);
+                
+                                 fetch(`/admin/users/${userId}/toggle-status`, {
+                     method: 'POST',
+                     headers: {
+                         'Content-Type': 'application/json'
+                     }
+                 })
+                .then(response => response.text())
+                .then(result => {
+                    console.log('상태 변경 결과:', result);
+                    if (result === 'success') {
+                        location.reload();
+                    } else {
+                        alert('상태 변경에 실패했습니다: ' + result);
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    alert('상태 변경 중 오류가 발생했습니다.');
+                });
+            }
+        }
+
+        function deleteUser(userId) {
+            if (confirm('이 사용자를 삭제하시겠습니까?')) {
+                console.log('삭제 요청:', userId);
+                
+                                 fetch(`/admin/users/${userId}/delete`, {
+                     method: 'POST',
+                     headers: {
+                         'Content-Type': 'application/json'
+                     }
+                 })
+                .then(response => response.text())
+                .then(result => {
+                    console.log('삭제 결과:', result);
+                    if (result === 'success') {
+                        location.reload();
+                    } else {
+                        alert('삭제에 실패했습니다: ' + result);
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    alert('삭제 중 오류가 발생했습니다.');
+                });
+            }
+        }
+
+        function setupBulkDeleteButton() {
+            const bulkDeleteBtn = document.getElementById('bulkDeleteBtn');
+            if (bulkDeleteBtn) {
+                bulkDeleteBtn.addEventListener('click', function() {
+                    const checkedBoxes = document.querySelectorAll('.user-checkbox:checked');
+                    const userIds = Array.from(checkedBoxes).map(cb => parseInt(cb.value));
+                    
+                    if (userIds.length === 0) {
+                        alert('삭제할 사용자를 선택해주세요.');
+                        return;
+                    }
+                    
+                    if (confirm(`선택한 ${userIds.length}명의 사용자를 삭제하시겠습니까?`)) {
+                        console.log('일괄 삭제 요청:', userIds);
+                        
+                        // 테스트용 - 실제로는 서버로 전송
+                        alert(`${userIds.length}명의 사용자가 삭제되었습니다. (테스트 모드)`);
+                        
+                        /*
+                        fetch('/admin/users/bulk-delete', {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                                [csrfHeader]: csrfToken
+                            },
+                            body: JSON.stringify(userIds)
+                        })
+                        .then(response => response.text())
+                        .then(result => {
+                            if (result === 'success') {
+                                location.reload();
+                            } else {
+                                alert('일괄 삭제에 실패했습니다: ' + result);
+                            }
+                        })
+                        .catch(error => {
+                            console.error('Error:', error);
+                            alert('일괄 삭제 중 오류가 발생했습니다.');
+                        });
+                        */
+                    }
+                });
+            }
+        }
+
+        // 페이지 로드 시 초기 상태 업데이트
+        window.addEventListener('load', function() {
+            updateBulkDeleteButton();
+            updateSelectAllStates();
+        });
+    </script>
+    
+</body>
+</html>

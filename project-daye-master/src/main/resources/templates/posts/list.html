@@ -4,111 +4,351 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>동영상 갤러리</title>
-    <!-- Bootstrap CSS -->
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <!-- Bootstrap Icons -->
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css" rel="stylesheet">
+    <title>동영상 갤러리 - Netflix 스타일</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.7.2/font/bootstrap-icons.css">
     <style>
-        .navbar-brand {
-            font-weight: bold;
+        :root {
+            --netflix-red: #e50914;
+            --netflix-dark: #141414;
+            --netflix-dark-gray: #181818;
+            --netflix-light-gray: #333;
+            --netflix-text: #ffffff;
+            --netflix-text-secondary: #b3b3b3;
         }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Helvetica Neue', Arial, sans-serif;
+            background: linear-gradient(135deg, var(--netflix-dark) 0%, #000000 100%);
+            color: var(--netflix-text);
+            min-height: 100vh;
+        }
+
+        .navbar-netflix {
+            background: linear-gradient(to bottom, rgba(0,0,0,0.9) 0%, transparent 100%);
+            padding: 20px 0;
+            position: fixed;
+            top: 0;
+            width: 100%;
+            z-index: 1000;
+        }
+
+        .navbar-brand-netflix {
+            color: var(--netflix-red) !important;
+            font-weight: 900;
+            font-size: 1.8rem;
+        }
+
+        .nav-link-netflix {
+            color: var(--netflix-text) !important;
+            font-weight: 500;
+            margin: 0 15px;
+            transition: color 0.3s ease;
+        }
+
+        .nav-link-netflix:hover {
+            color: var(--netflix-red) !important;
+        }
+
+        .main-content {
+            margin-top: 100px;
+            padding: 40px 0;
+        }
+
+        .hero-section {
+            background: linear-gradient(rgba(0,0,0,0.7), rgba(0,0,0,0.7)), 
+                        url('https://images.unsplash.com/photo-1574267432553-4b4628081c31?ixlib=rb-4.0.3&auto=format&fit=crop&w=2071&q=80');
+            background-size: cover;
+            background-position: center;
+            padding: 80px 0;
+            text-align: center;
+            margin-bottom: 50px;
+        }
+
+        .hero-title {
+            font-size: 3rem;
+            font-weight: 900;
+            margin-bottom: 1rem;
+            background: linear-gradient(45deg, var(--netflix-red), #ff6b6b);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .hero-subtitle {
+            font-size: 1.2rem;
+            color: var(--netflix-text-secondary);
+            margin-bottom: 2rem;
+        }
+
+        .btn-netflix {
+            background: var(--netflix-red);
+            color: white;
+            border: none;
+            padding: 12px 25px;
+            font-size: 1rem;
+            font-weight: 600;
+            border-radius: 5px;
+            text-decoration: none;
+            display: inline-block;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(229, 9, 20, 0.3);
+        }
+
+        .btn-netflix:hover {
+            background: #f40612;
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(229, 9, 20, 0.4);
+            color: white;
+        }
+
+        .btn-secondary-netflix {
+            background: rgba(109, 109, 110, 0.7);
+            color: white;
+            border: none;
+            padding: 12px 25px;
+            font-size: 1rem;
+            font-weight: 600;
+            border-radius: 5px;
+            text-decoration: none;
+            display: inline-block;
+            transition: all 0.3s ease;
+        }
+
+        .btn-secondary-netflix:hover {
+            background: rgba(109, 109, 110, 0.9);
+            color: white;
+            transform: translateY(-2px);
+        }
+
+        .search-form-netflix {
+            background: var(--netflix-dark-gray);
+            border-radius: 10px;
+            padding: 25px;
+            margin-bottom: 30px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+        }
+
+        .form-control-netflix {
+            background: var(--netflix-light-gray);
+            border: 1px solid #555;
+            color: var(--netflix-text);
+            border-radius: 5px;
+            padding: 12px 15px;
+            font-size: 1rem;
+        }
+
+        .form-control-netflix:focus {
+            background: var(--netflix-light-gray);
+            border-color: var(--netflix-red);
+            color: var(--netflix-text);
+            box-shadow: 0 0 0 0.2rem rgba(229, 9, 20, 0.25);
+        }
+
+        .form-control-netflix::placeholder {
+            color: var(--netflix-text-secondary);
+        }
+
         .gallery-card {
-            transition: transform 0.2s, box-shadow 0.2s;
+            background: var(--netflix-dark-gray);
+            border: none;
             border-radius: 15px;
             overflow: hidden;
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
         }
+
         .gallery-card:hover {
-            transform: translateY(-5px);
-            box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+            transform: translateY(-10px);
+            box-shadow: 0 20px 40px rgba(0,0,0,0.7);
         }
+
         .thumbnail-container {
             position: relative;
             height: 200px;
             overflow: hidden;
-            background: #f8f9fa;
+            background: var(--netflix-light-gray);
         }
+
         .thumbnail-container img {
             width: 100%;
             height: 100% !important;
-            object-fit: fill;
+            object-fit: cover;
             display: block;
+            transition: transform 0.3s ease;
         }
+
+        .gallery-card:hover .thumbnail-container img {
+            transform: scale(1.1);
+        }
+
         .no-thumbnail {
             display: flex;
             align-items: center;
             justify-content: center;
             height: 100%;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: linear-gradient(135deg, var(--netflix-red) 0%, #ff6b6b 100%);
             color: white;
             font-size: 3rem;
         }
+
         .video-overlay {
             position: absolute;
             top: 10px;
             right: 10px;
-            background: rgba(0,0,0,0.7);
+            background: rgba(0,0,0,0.8);
             color: white;
             padding: 5px 10px;
             border-radius: 20px;
             font-size: 0.8rem;
         }
+
         .play-icon {
             position: absolute;
             top: 50%;
             left: 50%;
             transform: translate(-50%, -50%);
-            background: rgba(0,0,0,0.8);
+            background: rgba(229, 9, 20, 0.9);
             color: white;
-            width: 50px;
-            height: 50px;
+            width: 60px;
+            height: 60px;
             border-radius: 50%;
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 1.5rem;
+            font-size: 1.8rem;
+            opacity: 0;
+            transition: opacity 0.3s ease;
         }
+
+        .gallery-card:hover .play-icon {
+            opacity: 1;
+        }
+
         .card-body {
-            padding: 1rem;
+            padding: 1.5rem;
+            background: var(--netflix-dark-gray);
         }
+
         .card-title {
             font-size: 1.1rem;
             font-weight: 600;
             margin-bottom: 0.5rem;
             line-height: 1.3;
+            color: var(--netflix-text);
         }
+
+        .card-title a {
+            color: var(--netflix-text);
+            text-decoration: none;
+            transition: color 0.3s ease;
+        }
+
+        .card-title a:hover {
+            color: var(--netflix-red);
+        }
+
         .card-text {
-            color: #6c757d;
+            color: var(--netflix-text-secondary);
             font-size: 0.9rem;
             margin-bottom: 0.5rem;
         }
-        .btn-write {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            border: none;
-            border-radius: 25px;
-            padding: 10px 25px;
-        }
-        .btn-write:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
-        }
-        .search-box {
-            max-width: 300px;
-        }
-        .pagination {
-            justify-content: center;
-        }
-        .alert {
+
+        .alert-netflix {
+            background: var(--netflix-dark-gray);
+            border: 1px solid var(--netflix-red);
+            color: var(--netflix-text);
+            border-radius: 10px;
+            padding: 15px 20px;
             margin-bottom: 20px;
+        }
+
+        .alert-success-netflix {
+            border-color: #28a745;
+            background: rgba(40, 167, 69, 0.1);
+        }
+
+        .alert-danger-netflix {
+            border-color: var(--netflix-red);
+            background: rgba(229, 9, 20, 0.1);
+        }
+
+        .pagination-netflix .page-link {
+            background: var(--netflix-dark-gray);
+            border: 1px solid var(--netflix-light-gray);
+            color: var(--netflix-text);
+            padding: 10px 15px;
+            margin: 0 2px;
+            border-radius: 5px;
+            transition: all 0.3s ease;
+        }
+
+        .pagination-netflix .page-link:hover {
+            background: var(--netflix-red);
+            border-color: var(--netflix-red);
+            color: white;
+        }
+
+        .pagination-netflix .page-item.active .page-link {
+            background: var(--netflix-red);
+            border-color: var(--netflix-red);
+            color: white;
+        }
+
+        .pagination-netflix .page-item.disabled .page-link {
+            background: var(--netflix-light-gray);
+            border-color: var(--netflix-light-gray);
+            color: var(--netflix-text-secondary);
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 80px 20px;
+            color: var(--netflix-text-secondary);
+        }
+
+        .empty-state i {
+            font-size: 4rem;
+            color: var(--netflix-red);
+            margin-bottom: 20px;
+        }
+
+        .stats-info {
+            background: var(--netflix-dark-gray);
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 30px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+        }
+
+        .stats-number {
+            color: var(--netflix-red);
+            font-weight: 700;
+            font-size: 1.2rem;
+        }
+
+        @media (max-width: 768px) {
+            .hero-title {
+                font-size: 2rem;
+            }
+            .hero-subtitle {
+                font-size: 1rem;
+            }
         }
     </style>
 </head>
 <body>
-    <!-- Navigation -->
-    <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+    <!-- 네비게이션 바 -->
+    <nav class="navbar navbar-expand-lg navbar-netflix">
         <div class="container">
-            <a class="navbar-brand" href="/posts">
-                <i class="bi bi-camera-video"></i> 동영상 갤러리
+            <a class="navbar-brand navbar-brand-netflix" href="/">
+                <i class="bi bi-camera-video-fill"></i> 동영상 갤러리
             </a>
             <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
                 <span class="navbar-toggler-icon"></span>
@@ -116,24 +356,24 @@
             <div class="collapse navbar-collapse" id="navbarNav">
                 <ul class="navbar-nav me-auto">
                     <li class="nav-item">
-                        <a class="nav-link active" href="/posts">홈</a>
+                        <a class="nav-link nav-link-netflix active" href="/posts">갤러리</a>
                     </li>
                     <li class="nav-item" sec:authorize="hasRole('ADMIN')">
-                        <a class="nav-link" href="/admin">관리자</a>
+                        <a class="nav-link nav-link-netflix" href="/admin">관리자</a>
                     </li>
                 </ul>
                 <ul class="navbar-nav">
                     <li class="nav-item" sec:authorize="!isAuthenticated()">
-                        <a class="nav-link" href="/login">로그인</a>
+                        <a class="nav-link nav-link-netflix" href="/login">로그인</a>
                     </li>
                     <li class="nav-item" sec:authorize="!isAuthenticated()">
-                        <a class="nav-link" href="/register">회원가입</a>
+                        <a class="nav-link nav-link-netflix" href="/register">회원가입</a>
                     </li>
                     <li class="nav-item dropdown" sec:authorize="isAuthenticated()">
-                        <a class="nav-link dropdown-toggle" href="#" id="navbarDropdown" role="button" data-bs-toggle="dropdown">
+                        <a class="nav-link nav-link-netflix dropdown-toggle" href="#" id="navbarDropdown" role="button" data-bs-toggle="dropdown">
                             <i class="bi bi-person-circle"></i> <span sec:authentication="name"></span>
                         </a>
-                        <ul class="dropdown-menu">
+                        <ul class="dropdown-menu dropdown-menu-dark">
                             <li><a class="dropdown-item" href="/profile">프로필</a></li>
                             <li><hr class="dropdown-divider"></li>
                             <li>
@@ -148,122 +388,227 @@
         </div>
     </nav>
 
-    <div class="container mt-4">
-        <!-- Flash Messages -->
-        <div th:if="${message}" class="alert alert-success alert-dismissible fade show" role="alert">
-            <i class="bi bi-check-circle"></i> <span th:text="${message}"></span>
-            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-        </div>
-        <div th:if="${error}" class="alert alert-danger alert-dismissible fade show" role="alert">
-            <i class="bi bi-exclamation-triangle"></i> <span th:text="${error}"></span>
-            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-        </div>
-
-        <!-- Header -->
-        <div class="row mb-4">
-            <div class="col-md-6">
-                <h2><i class="bi bi-collection-play"></i> 동영상 갤러리</h2>
-                <p class="text-muted">총 <span th:text="${totalElements}">0</span>개의 동영상</p>
-            </div>
-            <div class="col-md-6 text-end">
-                <a href="/posts/write" class="btn btn-primary btn-write" sec:authorize="isAuthenticated()">
-                    <i class="bi bi-plus-circle"></i> 동영상 업로드
-                </a>
-                <div sec:authorize="!isAuthenticated()" class="d-inline-block">
-                    <a href="/login" class="btn btn-outline-primary">
+    <div class="main-content">
+        <div class="container">
+            <!-- 히어로 섹션 -->
+            <section class="hero-section">
+                <h1 class="hero-title">동영상 갤러리</h1>
+                <p class="hero-subtitle">다양한 창작물을 발견하고 공유하세요</p>
+                <div class="hero-buttons">
+                    <a href="/posts/write" class="btn-netflix" sec:authorize="isAuthenticated()">
+                        <i class="bi bi-plus-circle"></i> 동영상 업로드
+                    </a>
+                    <a href="/login" class="btn-secondary-netflix" sec:authorize="!isAuthenticated()">
                         <i class="bi bi-box-arrow-in-right"></i> 로그인하여 업로드
                     </a>
                 </div>
-            </div>
-        </div>
+            </section>
 
-        <!-- Search -->
-        <div class="row mb-4">
-            <div class="col-md-6">
-                <form th:action="@{/posts}" method="get" class="d-flex">
-                    <input type="text" name="keyword" th:value="${keyword}" class="form-control search-box me-2" 
-                           placeholder="제목 또는 내용으로 검색...">
-                    <button type="submit" class="btn btn-outline-secondary">
-                        <i class="bi bi-search"></i>
-                    </button>
-                </form>
+            <!-- Flash Messages -->
+            <div th:if="${message}" class="alert alert-success-netflix alert-netflix" role="alert">
+                <i class="bi bi-check-circle"></i> <span th:text="${message}"></span>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="alert"></button>
             </div>
-        </div>
+            <div th:if="${error}" class="alert alert-danger-netflix alert-netflix" role="alert">
+                <i class="bi bi-exclamation-triangle"></i> <span th:text="${error}"></span>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="alert"></button>
+            </div>
 
-        <!-- Gallery Grid -->
-        <div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 row-cols-xl-4 g-4">
-            <div class="col" th:each="post : ${posts.content}">
-                <div class="card gallery-card h-100">
-                    <div class="thumbnail-container">
-                        <img th:if="${post.thumbnailFilename != null}" 
-                             th:src="@{'/files/thumbnail/' + ${post.thumbnailFilename}}" 
-                             th:alt="${post.title}" class="img-fluid">
-                    
-                        <div th:unless="${post.thumbnailFilename != null}" class="no-thumbnail">
-                            <i class="bi bi-camera-video"></i>
-                        </div>
-                        <div class="video-overlay">
-                            <i class="bi bi-play-circle"></i>
-                        </div>
-                        <div class="play-icon">
-                            <i class="bi bi-play-fill"></i>
-                        </div>
+            <!-- 통계 정보 -->
+            <div class="stats-info">
+                <div class="row">
+                    <div class="col-md-6">
+                        <h5><i class="bi bi-collection-play"></i> 갤러리 현황</h5>
+                        <p class="mb-0">
+                            총 <span class="stats-number" th:text="${totalElements}">0</span>개의 동영상
+                            <span th:if="${keyword}" class="ms-2">
+                                <i class="bi bi-search"></i>
+                                <span th:text="${searchType == 'all' ? '전체' : 
+                                              searchType == 'title' ? '제목' : 
+                                              searchType == 'content' ? '내용' : 
+                                              searchType == 'author' ? '작성자' : 
+                                              searchType == 'filename' ? '첨부파일' : '전체'}"></span>에서 
+                                "<span th:text="${keyword}"></span>" 검색 결과
+                            </span>
+                        </p>
                     </div>
-                    <div class="card-body d-flex flex-column">
-                        <h5 class="card-title">
-                            <a th:href="@{/posts/{id}(id=${post.id})}" class="text-decoration-none text-dark">
-                                <span th:text="${post.title}">제목</span>
-                            </a>
-                        </h5>
-                        <p class="card-text">
-                            <i class="bi bi-person"></i> <span th:text="${post.author.fullName}">작성자</span>
-                        </p>
-                        <p class="card-text">
-                            <i class="bi bi-calendar"></i> <span th:text="${#temporals.format(post.createdAt, 'yyyy-MM-dd')}">2024-01-01</span>
-                        </p>
-                        <p class="card-text">
-                            <i class="bi bi-eye"></i> 조회수 <span th:text="${post.viewCount}">0</span>
-                        </p>
-                        <div class="mt-auto">
-                            <a th:href="@{/posts/{id}(id=${post.id})}" class="btn btn-outline-primary btn-sm">
-                                <i class="bi bi-play-circle"></i> 보기
-                            </a>
+                    <div class="col-md-6 text-end">
+                        <div class="d-flex align-items-center justify-content-end">
+                            <label class="me-2 text-muted small">페이지당:</label>
+                            <select id="pageSizeSelect" class="form-select form-select-sm form-control-netflix" style="width: auto;">
+                                <option value="10" th:selected="${currentSize == 10}">10개</option>
+                                <option value="50" th:selected="${currentSize == 50}">50개</option>
+                                <option value="100" th:selected="${currentSize == 100}">100개</option>
+                            </select>
                         </div>
                     </div>
                 </div>
             </div>
-        </div>
 
-        <!-- Empty State -->
-        <div th:if="${#lists.isEmpty(posts.content)}" class="text-center py-5">
-            <i class="bi bi-camera-video" style="font-size: 4rem; color: #6c757d;"></i>
-            <h4 class="mt-3 text-muted">동영상이 없습니다</h4>
-            <p class="text-muted">첫 번째 동영상을 업로드해보세요!</p>
-        </div>
+            <!-- 검색 폼 -->
+            <form th:action="@{/posts}" method="get" class="search-form-netflix">
+                <div class="row align-items-center">
+                    <div class="col-md-3">
+                        <select name="searchType" id="searchTypeSelect" class="form-select form-control-netflix">
+                            <option value="all" th:selected="${searchType == 'all'}">전체</option>
+                            <option value="title" th:selected="${searchType == 'title'}">제목</option>
+                            <option value="content" th:selected="${searchType == 'content'}">내용</option>
+                            <option value="author" th:selected="${searchType == 'author'}">작성자</option>
+                            <option value="filename" th:selected="${searchType == 'filename'}">첨부파일</option>
+                        </select>
+                    </div>
+                    <div class="col-md-7">
+                        <input type="text" name="keyword" id="keywordInput" th:value="${keyword}" 
+                               class="form-control form-control-netflix" placeholder="검색어를 입력하세요...">
+                    </div>
+                    <div class="col-md-2">
+                        <button type="submit" class="btn-netflix w-100">
+                            <i class="bi bi-search"></i> 검색
+                        </button>
+                    </div>
+                </div>
+            </form>
 
-        <!-- Pagination -->
-        <nav th:if="${posts.totalPages > 1}" class="mt-5">
-            <ul class="pagination">
-                <li class="page-item" th:classappend="${posts.first} ? 'disabled'">
-                    <a class="page-link" th:href="@{/posts(page=${posts.number - 1}, keyword=${keyword})}">
-                        <i class="bi bi-chevron-left"></i>
-                    </a>
-                </li>
-                <li class="page-item" th:each="pageNum : ${#numbers.sequence(0, posts.totalPages - 1)}"
-                    th:classappend="${pageNum == posts.number} ? 'active'">
-                    <a class="page-link" th:href="@{/posts(page=${pageNum}, keyword=${keyword})}" 
-                       th:text="${pageNum + 1}">1</a>
-                </li>
-                <li class="page-item" th:classappend="${posts.last} ? 'disabled'">
-                    <a class="page-link" th:href="@{/posts(page=${posts.number + 1}, keyword=${keyword})}">
-                        <i class="bi bi-chevron-right"></i>
-                    </a>
-                </li>
-            </ul>
-        </nav>
+            <!-- 갤러리 그리드 -->
+            <div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 row-cols-xl-4 row-cols-xxl-5 g-4" 
+                 th:if="${posts != null and posts.content != null and !#lists.isEmpty(posts.content)}">
+                <div class="col" th:each="post : ${posts.content}">
+                    <div class="card gallery-card h-100">
+                        <div class="thumbnail-container">
+                            <img th:if="${post.thumbnailFilename != null}" 
+                                 th:src="@{'/uploads/thumbnails/' + ${post.thumbnailFilename}}" 
+                                 th:alt="${post.title}" class="img-fluid">
+                        
+                            <div th:unless="${post.thumbnailFilename != null}" class="no-thumbnail">
+                                <i class="bi bi-camera-video"></i>
+                            </div>
+                            <div class="video-overlay">
+                                <i class="bi bi-play-circle"></i>
+                            </div>
+                            <div class="play-icon">
+                                <i class="bi bi-play-fill"></i>
+                            </div>
+                        </div>
+                        <div class="card-body d-flex flex-column">
+                            <h5 class="card-title">
+                                <a th:href="@{/posts/{id}(id=${post.id})}">
+                                    <span th:text="${post.title}">제목</span>
+                                </a>
+                            </h5>
+                            <p class="card-text">
+                                <i class="bi bi-person"></i> <span th:text="${post.author.fullName}">작성자</span>
+                            </p>
+                            <p class="card-text">
+                                <i class="bi bi-calendar"></i> 
+                                <span th:text="${#temporals.format(post.createdAt, 'yyyy-MM-dd')}">2024-01-01</span>
+                                <span th:if="${post.updatedAt != null and post.updatedAt != post.createdAt}" 
+                                      class="text-muted ms-1" style="font-size: 0.8rem;">
+                                    (수정됨)
+                                </span>
+                            </p>
+                            <p class="card-text">
+                                <i class="bi bi-eye"></i> 조회수 <span th:text="${post.viewCount}">0</span>
+                            </p>
+                            <div class="mt-auto">
+                                <a th:href="@{/posts/{id}(id=${post.id})}" class="btn-netflix btn-sm">
+                                    <i class="bi bi-play-circle"></i> 보기
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 빈 상태 -->
+            <div th:if="${#lists.isEmpty(posts.content) or posts == null or posts.content == null}" class="empty-state">
+                <i class="bi bi-camera-video"></i>
+                <h4 th:if="${keyword == null or keyword == ''}">동영상이 없습니다</h4>
+                <h4 th:if="${keyword != null and keyword != ''}">검색 결과가 없습니다</h4>
+                <p th:if="${keyword == null or keyword == ''}">첫 번째 동영상을 업로드해보세요!</p>
+                <p th:if="${keyword != null and keyword != ''}">
+                    "<span th:text="${keyword}"></span>"에 대한 검색 결과가 없습니다.<br>
+                    다른 검색어를 시도해보세요.
+                </p>
+                <a th:if="${keyword != null and keyword != ''}" href="/posts" class="btn-secondary-netflix mt-3">
+                    <i class="bi bi-arrow-left"></i> 전체 목록으로 돌아가기
+                </a>
+            </div>
+
+            <!-- 페이지네이션 -->
+            <nav class="mt-5" th:if="${posts != null and posts.totalPages > 1}">
+                <ul class="pagination pagination-netflix justify-content-center">
+                    <!-- 이전 버튼 -->
+                    <li class="page-item" th:classappend="${posts.first} ? 'disabled'">
+                        <a class="page-link" th:href="@{/posts(page=${posts.number - 1}, keyword=${keyword}, searchType=${searchType}, currentSize=${currentSize})}">
+                            <i class="bi bi-chevron-left"></i>
+                        </a>
+                    </li>
+                    
+                    <!-- 페이지 번호들 -->
+                    <li class="page-item" 
+                        th:each="pageNum : ${#numbers.sequence(0, posts.totalPages - 1)}"
+                        th:classappend="${pageNum == posts.number} ? 'active'">
+                        <a class="page-link" th:href="@{/posts(page=${pageNum}, keyword=${keyword}, searchType=${searchType}, currentSize=${currentSize})}" 
+                           th:text="${pageNum + 1}">1</a>
+                    </li>
+                    
+                    <!-- 다음 버튼 -->
+                    <li class="page-item" th:classappend="${posts.last} ? 'disabled'">
+                        <a class="page-link" th:href="@{/posts(page=${posts.number + 1}, keyword=${keyword}, searchType=${searchType}, currentSize=${currentSize})}">
+                            <i class="bi bi-chevron-right"></i>
+                        </a>
+                    </li>
+                </ul>
+            </nav>
+        </div>
     </div>
 
-    <!-- Bootstrap JS -->
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    
+    <script>
+        // 페이징 크기 변경 처리
+        document.getElementById('pageSizeSelect').addEventListener('change', function() {
+            const newSize = this.value;
+            const currentUrl = new URL(window.location);
+            
+            // 현재 검색 조건들 유지
+            const keyword = currentUrl.searchParams.get('keyword') || '';
+            const searchType = currentUrl.searchParams.get('searchType') || 'all';
+            
+            // 새로운 URL 생성
+            const newUrl = `/posts?size=${newSize}`;
+            
+            // 검색 조건이 있으면 추가
+            if (keyword) {
+                newUrl += `&keyword=${encodeURIComponent(keyword)}&searchType=${searchType}`;
+            }
+            
+            window.location.href = newUrl;
+        });
+        
+        // 검색 타입 변경 시 검색어 초기화 및 검색 실행
+        document.getElementById('searchTypeSelect').addEventListener('change', function() {
+            // 검색창 초기화
+            document.getElementById('keywordInput').value = '';
+            
+            // 현재 페이징 크기 유지하면서 검색 실행
+            const currentSize = document.getElementById('pageSizeSelect').value;
+            const searchType = this.value;
+            window.location.href = `/posts?searchType=${searchType}&size=${currentSize}`;
+        });
+        
+        // 검색 폼 제출 시 페이징 크기 유지
+        const searchForm = document.querySelector('form[action="/posts"]');
+        if (searchForm) {
+            searchForm.addEventListener('submit', function(e) {
+                const pageSize = document.getElementById('pageSizeSelect').value;
+                const sizeInput = document.createElement('input');
+                sizeInput.type = 'hidden';
+                sizeInput.name = 'size';
+                sizeInput.value = pageSize;
+                this.appendChild(sizeInput);
+            });
+        }
+    </script>
 </body>
 </html> 

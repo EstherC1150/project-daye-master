@@ -35,15 +35,7 @@ public class AuthController {
                          @RequestParam String phoneNumber,
                          RedirectAttributes redirectAttributes) {
         try {
-            User user = new User();
-            user.setUsername(username);
-            user.setPassword(password);
-            user.setEmail(email);
-            user.setFullName(fullName);
-            user.setPhoneNumber(phoneNumber);
-            user.setRoles(java.util.Arrays.asList("USER"));
-            
-            userService.registerUser(user);
+            User user = userService.registerUser(username, password, fullName, email, phoneNumber);
             redirectAttributes.addFlashAttribute("message", "회원가입이 완료되었습니다. 로그인해주세요.");
             return "redirect:/login";
         } catch (Exception e) {

@@ -3,148 +3,367 @@
       xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
 <head>
     <meta charset="UTF-8">
-    <title>Spring Security Taglibs 예제</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>동영상 갤러리 - Netflix 스타일</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.7.2/font/bootstrap-icons.css">
     <style>
+        :root {
+            --netflix-red: #e50914;
+            --netflix-dark: #141414;
+            --netflix-dark-gray: #181818;
+            --netflix-light-gray: #333;
+            --netflix-text: #ffffff;
+            --netflix-text-secondary: #b3b3b3;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
         body {
-            font-family: Arial, sans-serif;
+            font-family: 'Helvetica Neue', Arial, sans-serif;
+            background: linear-gradient(135deg, var(--netflix-dark) 0%, #000000 100%);
+            color: var(--netflix-text);
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        .hero-section {
+            background: linear-gradient(rgba(0,0,0,0.7), rgba(0,0,0,0.7)), 
+                        url('https://images.unsplash.com/photo-1574267432553-4b4628081c31?ixlib=rb-4.0.3&auto=format&fit=crop&w=2071&q=80');
+            background-size: cover;
+            background-position: center;
+            height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            position: relative;
+        }
+
+        .hero-content {
             max-width: 800px;
-            margin: 0 auto;
-            padding: 20px;
+            padding: 0 20px;
         }
-        .security-info {
-            background-color: #f0f0f0;
-            padding: 15px;
-            border-radius: 5px;
-            margin: 10px 0;
+
+        .hero-title {
+            font-size: 4rem;
+            font-weight: 900;
+            margin-bottom: 1rem;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.8);
+            background: linear-gradient(45deg, var(--netflix-red), #ff6b6b);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
         }
-        .user-info {
-            background-color: #e8f5e8;
-            padding: 15px;
-            border-radius: 5px;
-            margin: 10px 0;
+
+        .hero-subtitle {
+            font-size: 1.5rem;
+            margin-bottom: 2rem;
+            color: var(--netflix-text-secondary);
         }
-        .admin-section {
-            background-color: #fff3cd;
-            padding: 15px;
-            border-radius: 5px;
-            margin: 10px 0;
-        }
-        .login-form {
-            background-color: #f8f9fa;
-            padding: 20px;
-            border-radius: 5px;
-            margin: 10px 0;
-        }
-        .form-group {
-            margin-bottom: 15px;
-        }
-        .form-group label {
-            display: block;
-            margin-bottom: 5px;
-        }
-        .form-group input {
-            width: 100%;
-            padding: 8px;
-            border: 1px solid #ddd;
-            border-radius: 4px;
-        }
-        .btn {
-            background-color: #007bff;
+
+        .btn-netflix {
+            background: var(--netflix-red);
             color: white;
-            padding: 10px 20px;
             border: none;
-            border-radius: 4px;
-            cursor: pointer;
+            padding: 15px 30px;
+            font-size: 1.1rem;
+            font-weight: 600;
+            border-radius: 5px;
+            text-decoration: none;
+            display: inline-block;
+            margin: 10px;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(229, 9, 20, 0.3);
         }
-        .btn:hover {
-            background-color: #0056b3;
+
+        .btn-netflix:hover {
+            background: #f40612;
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(229, 9, 20, 0.4);
+            color: white;
+        }
+
+        .btn-secondary-netflix {
+            background: rgba(109, 109, 110, 0.7);
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            font-size: 1.1rem;
+            font-weight: 600;
+            border-radius: 5px;
+            text-decoration: none;
+            display: inline-block;
+            margin: 10px;
+            transition: all 0.3s ease;
+        }
+
+        .btn-secondary-netflix:hover {
+            background: rgba(109, 109, 110, 0.9);
+            color: white;
+            transform: translateY(-2px);
+        }
+
+        .content-section {
+            padding: 80px 0;
+            background: var(--netflix-dark);
+        }
+
+        .card-netflix {
+            background: var(--netflix-dark-gray);
+            border: none;
+            border-radius: 10px;
+            padding: 30px;
+            margin: 20px 0;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+            transition: transform 0.3s ease;
+        }
+
+        .card-netflix:hover {
+            transform: translateY(-5px);
+        }
+
+        .card-title {
+            color: var(--netflix-red);
+            font-weight: 700;
+            margin-bottom: 20px;
+            font-size: 1.5rem;
+        }
+
+        .form-control-netflix {
+            background: var(--netflix-light-gray);
+            border: 1px solid #555;
+            color: var(--netflix-text);
+            border-radius: 5px;
+            padding: 12px 15px;
+            font-size: 1rem;
+        }
+
+        .form-control-netflix:focus {
+            background: var(--netflix-light-gray);
+            border-color: var(--netflix-red);
+            color: var(--netflix-text);
+            box-shadow: 0 0 0 0.2rem rgba(229, 9, 20, 0.25);
+        }
+
+        .form-control-netflix::placeholder {
+            color: var(--netflix-text-secondary);
+        }
+
+        .navbar-netflix {
+            background: linear-gradient(to bottom, rgba(0,0,0,0.9) 0%, transparent 100%);
+            padding: 20px 0;
+            position: fixed;
+            top: 0;
+            width: 100%;
+            z-index: 1000;
+        }
+
+        .navbar-brand-netflix {
+            color: var(--netflix-red) !important;
+            font-weight: 900;
+            font-size: 1.8rem;
+        }
+
+        .nav-link-netflix {
+            color: var(--netflix-text) !important;
+            font-weight: 500;
+            margin: 0 15px;
+            transition: color 0.3s ease;
+        }
+
+        .nav-link-netflix:hover {
+            color: var(--netflix-red) !important;
+        }
+
+        .feature-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 30px;
+            margin-top: 50px;
+        }
+
+        .feature-item {
+            text-align: center;
+            padding: 30px;
+            background: var(--netflix-dark-gray);
+            border-radius: 15px;
+            transition: transform 0.3s ease;
+        }
+
+        .feature-item:hover {
+            transform: translateY(-10px);
+        }
+
+        .feature-icon {
+            font-size: 3rem;
+            color: var(--netflix-red);
+            margin-bottom: 20px;
+        }
+
+        .footer-netflix {
+            background: var(--netflix-dark);
+            color: var(--netflix-text-secondary);
+            padding: 40px 0;
+            text-align: center;
+            border-top: 1px solid #333;
+        }
+
+        @media (max-width: 768px) {
+            .hero-title {
+                font-size: 2.5rem;
+            }
+            .hero-subtitle {
+                font-size: 1.2rem;
+            }
         }
     </style>
 </head>
 <body>
-    <h1>Spring Security Taglibs 예제</h1>
-    
-    <!-- 인증 상태 확인 -->
-    <div class="security-info">
-        <h3>인증 상태</h3>
-        <p sec:authorize="!isAuthenticated()">
-            현재 로그인되지 않았습니다.
-        </p>
-        <p sec:authorize="isAuthenticated()">
-            현재 로그인되어 있습니다.
-        </p>
-    </div>
-
-    <!-- 사용자 정보 표시 -->
-    <div class="user-info" sec:authorize="isAuthenticated()">
-        <h3>사용자 정보</h3>
-        <p>사용자명: <span sec:authentication="name"></span></p>
-        <p>권한: <span sec:authentication="principal.authorities"></span></p>
-    </div>
-
-    <!-- 역할별 접근 제어 -->
-    <div class="admin-section" sec:authorize="hasRole('ADMIN')">
-        <h3>관리자 전용 섹션</h3>
-        <p>이 섹션은 ADMIN 역할을 가진 사용자만 볼 수 있습니다.</p>
-    </div>
-
-    <div sec:authorize="hasRole('USER')">
-        <h3>일반 사용자 섹션</h3>
-        <p>이 섹션은 USER 역할을 가진 사용자만 볼 수 있습니다.</p>
-    </div>
-
-    <!-- 로그인 폼 (로그인되지 않은 경우에만 표시) -->
-    <div class="login-form" sec:authorize="!isAuthenticated()">
-        <h3>로그인</h3>
-        <form th:action="@{/login}" method="post">
-            <div class="form-group">
-                <label for="username">사용자명:</label>
-                <input type="text" id="username" name="username" required>
+    <!-- 네비게이션 바 -->
+    <nav class="navbar navbar-expand-lg navbar-netflix">
+        <div class="container">
+            <a class="navbar-brand navbar-brand-netflix" href="/">
+                <i class="bi bi-camera-video-fill"></i> 동영상 갤러리
+            </a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav ms-auto">
+                    <li class="nav-item">
+                        <a class="nav-link nav-link-netflix" href="/posts">갤러리</a>
+                    </li>
+                    <li class="nav-item" sec:authorize="hasRole('ADMIN')">
+                        <a class="nav-link nav-link-netflix" href="/admin">관리자</a>
+                    </li>
+                    <li class="nav-item" sec:authorize="!isAuthenticated()">
+                        <a class="nav-link nav-link-netflix" href="/login">로그인</a>
+                    </li>
+                    <li class="nav-item" sec:authorize="!isAuthenticated()">
+                        <a class="nav-link nav-link-netflix" href="/register">회원가입</a>
+                    </li>
+                    <li class="nav-item dropdown" sec:authorize="isAuthenticated()">
+                        <a class="nav-link nav-link-netflix dropdown-toggle" href="#" id="navbarDropdown" role="button" data-bs-toggle="dropdown">
+                            <i class="bi bi-person-circle"></i> <span sec:authentication="name"></span>
+                        </a>
+                        <ul class="dropdown-menu dropdown-menu-dark">
+                            <li><a class="dropdown-item" href="/profile">프로필</a></li>
+                            <li><hr class="dropdown-divider"></li>
+                            <li>
+                                <form th:action="@{/logout}" method="post" style="display: inline;">
+                                    <button type="submit" class="dropdown-item">로그아웃</button>
+                                </form>
+                            </li>
+                        </ul>
+                    </li>
+                </ul>
             </div>
-            <div class="form-group">
-                <label for="password">비밀번호:</label>
-                <input type="password" id="password" name="password" required>
+        </div>
+    </nav>
+
+    <!-- 히어로 섹션 -->
+    <section class="hero-section">
+        <div class="hero-content">
+            <h1 class="hero-title">동영상 갤러리</h1>
+            <p class="hero-subtitle">당신의 창작물을 세상과 공유하세요</p>
+            <div class="hero-buttons">
+                <a href="/posts" class="btn-netflix">
+                    <i class="bi bi-play-fill"></i> 갤러리 보기
+                </a>
+                <a href="/posts/write" class="btn-secondary-netflix" sec:authorize="isAuthenticated()">
+                    <i class="bi bi-plus-circle"></i> 동영상 업로드
+                </a>
             </div>
-            <button type="submit" class="btn">로그인</button>
-        </form>
-    </div>
+        </div>
+    </section>
 
-    <!-- 로그아웃 버튼 (로그인된 경우에만 표시) -->
-    <div sec:authorize="isAuthenticated()">
-        <form th:action="@{/logout}" method="post">
-            <button type="submit" class="btn">로그아웃</button>
-        </form>
-    </div>
+    <!-- 콘텐츠 섹션 -->
+    <section class="content-section">
+        <div class="container">
+            <!-- 인증 상태 확인 -->
+            <div class="card-netflix" sec:authorize="!isAuthenticated()">
+                <h3 class="card-title">
+                    <i class="bi bi-shield-lock"></i> 로그인
+                </h3>
+                <form th:action="@{/login}" method="post">
+                    <div class="mb-3">
+                        <label for="username" class="form-label">사용자명</label>
+                        <input type="text" class="form-control form-control-netflix" id="username" name="username" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="password" class="form-label">비밀번호</label>
+                        <input type="password" class="form-control form-control-netflix" id="password" name="password" required>
+                    </div>
+                    <button type="submit" class="btn-netflix">
+                        <i class="bi bi-box-arrow-in-right"></i> 로그인
+                    </button>
+                </form>
+            </div>
 
-    <!-- 권한별 링크 -->
-    <div style="margin-top: 20px;">
-        <h3>메뉴</h3>
-        <ul>
-            <li><a href="/">홈</a></li>
-            <li sec:authorize="hasRole('ADMIN')">
-                <a href="/admin">관리자 페이지</a>
-            </li>
-            <li sec:authorize="hasRole('USER')">
-                <a href="/user">사용자 페이지</a>
-            </li>
-            <li sec:authorize="hasAnyRole('ADMIN', 'USER')">
-                <a href="/profile">프로필</a>
-            </li>
-        </ul>
-    </div>
+            <!-- 사용자 정보 표시 -->
+            <div class="card-netflix" sec:authorize="isAuthenticated()">
+                <h3 class="card-title">
+                    <i class="bi bi-person-circle"></i> 사용자 정보
+                </h3>
+                <p><strong>사용자명:</strong> <span sec:authentication="name"></span></p>
+                <p><strong>권한:</strong> <span sec:authentication="principal.authorities"></span></p>
+                <form th:action="@{/logout}" method="post" style="display: inline;">
+                    <button type="submit" class="btn-netflix">
+                        <i class="bi bi-box-arrow-left"></i> 로그아웃
+                    </button>
+                </form>
+            </div>
 
-    <!-- 조건부 표현식 예제 -->
-    <div style="margin-top: 20px;">
-        <h3>조건부 표현식 예제</h3>
-        <p sec:authorize="hasAuthority('READ')">
-            읽기 권한이 있습니다.
-        </p>
-        <p sec:authorize="hasAuthority('WRITE')">
-            쓰기 권한이 있습니다.
-        </p>
-        <p sec:authorize="hasAnyAuthority('READ', 'WRITE')">
-            읽기 또는 쓰기 권한이 있습니다.
-        </p>
-    </div>
+            <!-- 기능 소개 -->
+            <div class="feature-grid">
+                <div class="feature-item">
+                    <div class="feature-icon">
+                        <i class="bi bi-camera-video"></i>
+                    </div>
+                    <h4>동영상 업로드</h4>
+                    <p>고품질 동영상을 쉽게 업로드하고 관리하세요</p>
+                </div>
+                <div class="feature-item">
+                    <div class="feature-icon">
+                        <i class="bi bi-people"></i>
+                    </div>
+                    <h4>커뮤니티</h4>
+                    <p>다른 창작자들과 소통하고 영감을 얻으세요</p>
+                </div>
+                <div class="feature-item">
+                    <div class="feature-icon">
+                        <i class="bi bi-shield-check"></i>
+                    </div>
+                    <h4>안전한 플랫폼</h4>
+                    <p>보안이 강화된 환경에서 안전하게 활동하세요</p>
+                </div>
+            </div>
+
+            <!-- 관리자 섹션 -->
+            <div class="card-netflix" sec:authorize="hasRole('ADMIN')">
+                <h3 class="card-title">
+                    <i class="bi bi-gear"></i> 관리자 전용
+                </h3>
+                <p>이 섹션은 ADMIN 역할을 가진 사용자만 볼 수 있습니다.</p>
+                <a href="/admin" class="btn-netflix">
+                    <i class="bi bi-speedometer2"></i> 관리자 대시보드
+                </a>
+            </div>
+        </div>
+    </section>
+
+    <!-- 푸터 -->
+    <footer class="footer-netflix">
+        <div class="container">
+            <p>&copy; 2024 동영상 갤러리. 모든 권리 보유.</p>
+        </div>
+    </footer>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html> 
